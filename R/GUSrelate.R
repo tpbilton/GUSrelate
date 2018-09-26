@@ -28,7 +28,7 @@ GRM <- R6Class("GRM",
                          if(p == "pest")
                            phat = private$pfreq
                          else if(p == "gest")
-                           phat = 
+                           phat = private$gfreq
                          
                          snpsubset <- which(phat < 1-thres & phat > thres)
                          phat <- phat[snpsubset]
