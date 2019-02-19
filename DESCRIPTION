@@ -1,8 +1,8 @@
 Package: GUSrelate
 Title: Genotyping Uncertainty with Sequencing data and RELATEdness 
-Version: 0.0.1
+Version: 0.1.0
 Authors@R: person("Timothy P.", "Bilton", email = "tbilton@maths.otago.ac.nz", role = c("aut", "cre"))
-Description: What the package does (one paragraph).
+Description: What the package does.
 Depends: R (>= 3.3.0), GUSbase
 License: GPL3
 Encoding: UTF-8

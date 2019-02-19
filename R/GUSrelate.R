@@ -1,65 +1,104 @@
+##########################################################################
+# Genotyping Uncertainty with Sequencing data and RELATEdness (GUSrelate)
+# Copyright 2019 Timothy P. Bilton <tbilton@maths.otago.ac.nz>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#########################################################################
 
-
+#' GRM object
+#'
+#' Class for storing RA data and associated functions for analyzing unstructured populations (e.g.,
+#' populations with no known structure).
+#'
+#' An US object is created from the \code{\link{makeUS}} function and contains RA data,
+#' various statistics of the dataset that have been computed, and functions (or methods)
+#' for analyzing the data. Information in an US are specific to unrelated populations (or
+#' populations with no known relationships).
+#' @usage
+#' USobj <- makeUS()
+#' @format NULL
+#' @author Timothy P. Bilton
+#' @seealso \code{\link{makeUR}}
+#' @name GRM
+#' @export
+### R6 class for creating a data format for unstructured populations
 
 GRM <- R6Class("GRM",
-                     inherit = UR,
+                     inherit = RA,
                      public = list(
-                       initialize = function(URobj){
-                         private$ref       <- URobj$.__enclos_env__$private$ref
-                         private$alt       <- URobj$.__enclos_env__$private$alt
-                         private$ratio     <- URobj$.__enclos_env__$private$ref/(URobj$.__enclos_env__$private$ref + URobj$.__enclos_env__$private$alt)
-                         private$chrom     <- URobj$.__enclos_env__$private$chrom
-                         private$pos       <- URobj$.__enclos_env__$private$pos
-                         private$SNP_Names <- URobj$.__enclos_env__$private$SNP_Names
-                         private$indID     <- URobj$.__enclos_env__$private$indID
-                         private$nSnps     <- URobj$.__enclos_env__$private$nSnps
-                         private$nInd      <- URobj$.__enclos_env__$private$nInd
-                         private$gform     <- URobj$.__enclos_env__$private$gform
-                         private$AFrq      <- URobj$.__enclos_env__$private$AFrq
-                         private$infilename<- URobj$.__enclos_env__$private$infilename
-                         private$ploid     <- URobj$.__enclos_env__$private$ploid
-                         private$pfreq     <- URobj$.__enclos_env__$pfreq
-                         private$gfreq     <- URobj$.__enclos_env__$gfreq
-                         private$ep        <- URobj$.__enclos_env__$ep
+                       initialize = function(GRMobj, ploid, indsubset){
+                         private$ref       <- GRMobj$.__enclos_env__$private$ref[indsubset,]
+                         private$alt       <- GRMobj$.__enclos_env__$private$alt[indsubset,]
+                         private$chrom     <- GRMobj$.__enclos_env__$private$chrom
+                         private$pos       <- GRMobj$.__enclos_env__$private$pos
+                         private$SNP_Names <- GRMobj$.__enclos_env__$private$SNP_Names
+                         private$indID     <- GRMobj$.__enclos_env__$private$indID[indsubset]
+                         private$nSnps     <- GRMobj$.__enclos_env__$private$nSnps
+                         private$nInd      <- length(indsubset)
+                         private$gform     <- GRMobj$.__enclos_env__$private$gform
+                         private$AFrq      <- GRMobj$.__enclos_env__$private$AFrq
+                         private$infilename<- GRMobj$.__enclos_env__$private$infilename
+                         private$ploid     <- ploid
+                         private$pfreq     <- NULL
+                         private$gfreq     <- NULL
+                         private$pvalue    <- NULL
+                         private$ep        <- NULL
+                         private$miss      <- NULL
                        },
-                       computeGRM = function(p = "pest", thres = 0.01){
-                         
-                         
-                         if(p == "pest")
-                           phat = private$pfreq
-                         else if(p == "gest")
-                           phat = private$gfreq
-                         
-                         snpsubset <- which(phat < 1-thres & phat > thres)
-                         phat <- phat[snpsubset]
-                         nSnps <- length(snpsubset)
-                         nInd <- private$nInd
-                         ep <- matrix(private$ep[snpsubset], nrow=nInd, ncol=nSnps, byrow=T)
-                         ratio <- private$ratio[,snpsubset]
-                         depth <- private$ref[,snpsubset] + private$alt[,snpsubset]
-                         ## Compute the adjusted GRM
-                         genon <- ratio - (2*ploid)*rep.int(phat, rep(nInd, nSnps))
-                         genon[is.na(ratio)] <- 0
-                         genon[depth < 2] <- 0
-                         P0 <- matrix(phat,nrow=nInd,ncol=nSnps,byrow=T)
-                         P1 <- 1-P0
-                         P0[depth < 2] <- 0
-                         P1[depth < 2] <- 0
-                         div0 <- (2*ploid)*tcrossprod(P0,P1)
-                         GRM <- (tcrossprod(genon/sqrt(1-4*ep*(1-ep))) - tcrossprod(sqrt((2*ploid*ep)^2*(1-4*P0*P1)/(1-4*ep*(1-ep)))))/div0
-                         depth.temp <- depth
-                         depth.temp[which(depth < 2)] <- 0
-                         depth.temp <- 1/depth.temp
-                         depth.temp2 <- depth.temp
-                         depth.temp[is.infinite(depth.temp)] <- 1
-                         depth.temp2[is.infinite(depth.temp2)] <- 0
-                         depth.temp3 <- depth
-                         depth.temp3[which(depth.temp3 < 2)] <- 0
-                         depth.temp3[which(depth.temp3 > 1)] <- 1
-                         adj <- depth.temp3*(2*ploid)^2*(P0*P1*(depth.temp + 4*ep*(1-ep)*(1-depth.temp)) +
-                                                           ep*(ep+(1-ep)*depth.temp - 4*P0*P1))
-                         diag(GRM) <- rowSums(  (genon^2 - adj)/((1-depth.temp2)*(1-4*ep*(1-ep))))/diag(div0)
-                         return(GRM)
+                       computeGRM = function(method="VanRaden", ep=0, filter=list(MAF=NULL, MISS=NULL, PVALUE=NULL), ...){
+                         ## do some checks
+                         if(is.null(filter$MAF)) filter$MAF <- 0
+                         else if( length(filter$MAF) != 1 || !is.numeric(filter$MAF) || filter$MAF<0 || filter$MAF>1)
+                           stop("Minor allele frequency filter is invalid")
+                         if(is.null(filter$MISS)) filter$MISS <- 1
+                         else if( length(filter$MISS) != 1 || !is.numeric(filter$MISS) || filter$MISS<0 || filter$MISS>1 )
+                           stop("Proportion of missing data filter is invalid")
+                         if(is.null(filter$PVALUE)) filter$PVALUE <- 0
+                         else if( length(filter$PVALUE) != 1 || !is.numeric(filter$PVALUE) || filter$PVALUE<0 || filter$PVALUE>1 )
+                           stop("P-value for Hardy-Weinberg equilibrium filter is invalid.")
+                         if(length(method) != 1 || !is.character(method) || any(method) %in% c("VanRaden","WG"))
+                           stop("Method argument must be either 'VanRaden' or 'WG'")
+
+
+                         ## compute the subset of SNPs
+                         snpsubset <- rep(TRUE, private$nSnps)
+                         if(!is.null(private$pfreq)){
+                           maf <- pmin(private$pfreq,1-private$pfreq)
+                           snpsubset[which(maf < filter$MAF)] <- FALSE
+                         }
+                         if(!is.null(private$pvalue))
+                           snpsubset[which(private$pvalue < filter$PVALUE)] <- FALSE
+                         if(!is.null(private$miss))
+                           snpsubset[which(private$miss < filter$MISS)] <- FALSE
+                         ## compute the GRM
+                         GRMmat <- GUSrelate::computeGRM(private$ref, private$alt, private$ploid, which(snpsubset), method,
+                                               private$pfreq, ep=ep, ...)
+                         ## work which GRM to save
+                         if(method == "VanRaden") private$GRM_VR <- GRMmat
+                         else if(method == "WG")  private$GRM_WG <- GRMmat
+                         return(invisible())
+                       },
+                       p_est = function(snpsubset=NULL, indsubset=NULL, nThreads=1, para=NULL, EMpara=NULL){
+                         private$pfreq <- GUSbase::p_est_em(private$ref, private$alt, private$ploid, snpsubset=snpsubset,
+                                                            indsubset=indsubset, nThreads=nThreads, para=para, EMpara=EMpara)
+                       },
+                       HWE_est = function(snpsubset=NULL, indsubset=NULL, nThreads=1, para=NULL, EMpara=NULL){
+                         pest <- GUSbase::p_est_em(private$ref, private$alt, private$ploid, snpsubset=snpsubset,
+                                                   indsubset=indsubset, nThreads=nThreads, para=para, EMpara=EMpara)
+                         gest <- GUSbase::g_est_em(private$ref, private$alt, private$ploid, snpsubset=snpsubset,
+                                                   indsubset=indsubset, nThreads=nThreads, para=para, EMpara=EMpara)
+                         private$pvalue <- 1-pchisq(-2*(pest$loglik - gest$loglik), df=private$ploid-1)
                        }
                      ),
                      private = list(
