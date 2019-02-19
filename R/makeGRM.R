@@ -35,7 +35,7 @@ makeGRM <- function(RAobj, ploid=2, method="VanRaden", indsubset=NULL, nThreads=
     stop("Argument for the number of cores for the MPI parallelization is invalid")
   if(is.null(indsubset))
     indsubset <- 1:RAobj$.__enclos_env__$private$nInd
-  if(GUSbase::isValue(indsubset, type="pos_integer", minv=1, maxv=RAobj$.__enclos_env__$private$nInd))
+  if(GUSbase::checkVector(indsubset, type="pos_integer", minv=1, maxv=RAobj$.__enclos_env__$private$nInd))
     stop("Argument for the indices of the individuals is invalid.")
   if(is.null(filter$MAF)) filter$MAF <- 0
   else if( length(filter$MAF) != 1 || !is.numeric(filter$MAF) || filter$MAF<0 || filter$MAF>1)
@@ -52,11 +52,11 @@ makeGRM <- function(RAobj, ploid=2, method="VanRaden", indsubset=NULL, nThreads=
 
   ## Compute allele frequencies if required
   if(isTRUE(est$MAF)){
-    GRMobj$.__enclos_env__$private$p_est(nThreads=nThreads)
+    GRMobj$p_est(nThreads=nThreads)
   }
   ## Compute p-value for HWE if required
   if(isTRUE(est$HWE)){
-    GRMobj$.__enclos_env__$private$HWE_est(nThreads=nThreads)
+    GRMobj$HWE_est(nThreads=nThreads)
   }
   ## Compute proportion of missing data
   GRMobj$.__enclos_env__$private$miss <- apply(GRMobj$.__enclos_env__$private$ref + GRMobj$.__enclos_env__$private$alt,

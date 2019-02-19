@@ -15,14 +15,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #########################################################################
-#' export computeGRM
+#' @export computeGRM
 
 computeGRM <- function(ref, alt, ploid, snpsubset=NULL, method="VanRaden", phat, ep=0, ...){
 
-  if(missing(thres)) thres = 0.001
+  if(!exists("thres")) thres = 0.001
 
   ## do some checks
-  if(length(method) != 1 || !is.character(method) || any(method) %in% c("VanRaden","WG"))
+  if(length(method) != 1 || !is.character(method) || any(!(method %in% c("VanRaden","WG"))))
     stop("Method argument must be either 'VanRaden' or 'WG'")
   if(all(dim(ref) != dim(alt)))
     stop("The matrix of reference alleles has different dimensions to matrix of alternate alleles")
@@ -32,11 +32,11 @@ computeGRM <- function(ref, alt, ploid, snpsubset=NULL, method="VanRaden", phat,
   }
   depth <- ref + alt
   ratio <- (ploid*ref/depth)
-  if(any(length(ep) %in% c(1,nSnps))){
+  if(any(!(length(ep) %in% c(1,nSnps)))){
     warning("Vector for sequecning error parameter is not equal to 1 or the number of SNPs.\nSetting to zero.")
     ep = 0
   }
-  if(method="VanRaden" && (!is.null(phat) || length(phat) != nSnps))
+  if(method=="VanRaden" && (is.null(phat) || length(phat) != nSnps))
     stop("Allele frequency vector is not supplied or not equal to the number of SNPs")
   ## subset the data if required
   if(!is.null(snpsubset)){
@@ -45,7 +45,7 @@ computeGRM <- function(ref, alt, ploid, snpsubset=NULL, method="VanRaden", phat,
     ## compute depth and dosage matrix
     depth <- depth[,snpsubset]
     ratio <- ratio[,snpsubset]
-    if(method="VanRaden") phat <- phat[snpsubset]
+    if(method=="VanRaden") phat <- phat[snpsubset]
   }
 
   #################
@@ -83,7 +83,7 @@ computeGRM <- function(ref, alt, ploid, snpsubset=NULL, method="VanRaden", phat,
     return(GRM)
   }
   else if(method == "WG"){
-    snpsubset <- which(!((colMeans(ratio, na.rm=T) == ploid) || (colMeans(ratio, na.rm=T) == 0)))
+    snpsubset <- which(!((colMeans(ratio, na.rm=T) == ploid) | (colMeans(ratio, na.rm=T) == 0)))
     ratio <- ratio[, snpsubset]
     nSnps <- length(snpsubset)
     na_mat <- !is.na(ratio)

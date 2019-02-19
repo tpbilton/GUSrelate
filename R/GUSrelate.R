@@ -49,12 +49,7 @@ GRM <- R6Class("GRM",
                          private$gform     <- GRMobj$.__enclos_env__$private$gform
                          private$AFrq      <- GRMobj$.__enclos_env__$private$AFrq
                          private$infilename<- GRMobj$.__enclos_env__$private$infilename
-                         private$ploid     <- ploid
-                         private$pfreq     <- NULL
-                         private$gfreq     <- NULL
-                         private$pvalue    <- NULL
-                         private$ep        <- NULL
-                         private$miss      <- NULL
+                         private$ploid     <- as.integer(ploid)
                        },
                        computeGRM = function(method="VanRaden", ep=0, filter=list(MAF=NULL, MISS=NULL, PVALUE=NULL), ...){
                          ## do some checks
@@ -67,7 +62,7 @@ GRM <- R6Class("GRM",
                          if(is.null(filter$PVALUE)) filter$PVALUE <- 0
                          else if( length(filter$PVALUE) != 1 || !is.numeric(filter$PVALUE) || filter$PVALUE<0 || filter$PVALUE>1 )
                            stop("P-value for Hardy-Weinberg equilibrium filter is invalid.")
-                         if(length(method) != 1 || !is.character(method) || any(method) %in% c("VanRaden","WG"))
+                         if(length(method) != 1 || !is.character(method) || any(!(method %in% c("VanRaden","WG"))))
                            stop("Method argument must be either 'VanRaden' or 'WG'")
 
 
@@ -80,7 +75,7 @@ GRM <- R6Class("GRM",
                          if(!is.null(private$pvalue))
                            snpsubset[which(private$pvalue < filter$PVALUE)] <- FALSE
                          if(!is.null(private$miss))
-                           snpsubset[which(private$miss < filter$MISS)] <- FALSE
+                           snpsubset[which(private$miss > filter$MISS)] <- FALSE
                          ## compute the GRM
                          GRMmat <- GUSrelate::computeGRM(private$ref, private$alt, private$ploid, which(snpsubset), method,
                                                private$pfreq, ep=ep, ...)
@@ -90,8 +85,9 @@ GRM <- R6Class("GRM",
                          return(invisible())
                        },
                        p_est = function(snpsubset=NULL, indsubset=NULL, nThreads=1, para=NULL, EMpara=NULL){
-                         private$pfreq <- GUSbase::p_est_em(private$ref, private$alt, private$ploid, snpsubset=snpsubset,
+                         temp <- GUSbase::p_est_em(private$ref, private$alt, private$ploid, snpsubset=snpsubset,
                                                             indsubset=indsubset, nThreads=nThreads, para=para, EMpara=EMpara)
+                         private$pfreq <- temp$p
                        },
                        HWE_est = function(snpsubset=NULL, indsubset=NULL, nThreads=1, para=NULL, EMpara=NULL){
                          pest <- GUSbase::p_est_em(private$ref, private$alt, private$ploid, snpsubset=snpsubset,
@@ -102,6 +98,14 @@ GRM <- R6Class("GRM",
                        }
                      ),
                      private = list(
-                       ratio  = NULL
+                       ratio  = NULL,
+                       ploid  = NULL,
+                       pfreq  = NULL,
+                       pvalue = NULL,
+                       miss   = NULL,
+                       ep     = NULL,
+                       gfreq  = NULL,
+                       GRM_VR = NULL,
+                       GRM_WG = NULL
                      )
 )
