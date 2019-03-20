@@ -83,14 +83,25 @@ computeGRM <- function(ref, alt, ploid, snpsubset=NULL, method="VanRaden", phat,
     return(GRM)
   }
   else if(method == "WG"){
+    ratio[which(depth < 2)] <- NA
     snpsubset <- which(!((colMeans(ratio, na.rm=T) == ploid) | (colMeans(ratio, na.rm=T) == 0)))
     ratio <- ratio[, snpsubset]
     nSnps <- length(snpsubset)
-    na_mat <- !is.na(ratio)
-    na_mat <- tcrossprod(na_mat,na_mat)
+    na_indx <- !is.na(ratio)
+    na_mat <- tcrossprod(na_indx,na_indx)
     ratio[which(is.na(ratio))] <- ploid/2
 
-    mat <- 1/2 + 2/ploid^2*tcrossprod(ratio - ploid/2)/na_mat
+    drat <- 1/depth[,snpsubset]
+    drat[which(depth[,snpsubset] < 2)] <- 0
+
+    epMat <- matrix(ep, nrow=nInd, ncol=nSnps)
+    epMat[which(depth[,snpsubset] < 2)] <- 0
+
+    mat <- 1/2 + 2/(ploid^2)*(tcrossprod((ratio-ploid/2)/sqrt(1-4*epMat*(1-epMat))) -
+                                  tcrossprod(sqrt(((ploid^2/4)*na_indx)/(1-4*epMat*(1-epMat)))) + tcrossprod(sqrt(ploid^2/4*na_indx)) +
+                                  tcrossprod(sqrt(ploid^2*epMat*(1-epMat)/(1-4*epMat*(1-epMat)))))/na_mat
+    diag(mat) <- 1/2 + 2/(ploid^2)*rowSums( (((ratio-ploid/2)^2 - (ploid)^2/4)/(1-drat) + ploid^2*epMat*(1-epMat))/(1-4*epMat*(1-epMat)) + ploid^2/4)/diag(na_mat)
+
     mat_sum <- (sum(mat) - sum(diag(mat)))/(nrow(mat)*(nrow(mat)-1))
     GRM <- ploid*(mat - mat_sum)/(1-mat_sum)
     return(GRM)

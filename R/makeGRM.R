@@ -23,7 +23,7 @@
 
 #### Make an unstructured population
 makeGRM <- function(RAobj, ploid=2, method="VanRaden", indsubset=NULL, nThreads=1, ep=0,
-                    filter=list(MAF=NULL, MISS=NULL, PVALUE=NULL),
+                    filter=list(MAF=NULL, MISS=NULL, PVALUE=NULL, MAXDEPTH=500, BIN=100),
                     est=list(MAF=TRUE, HWE=TRUE)){
 
   ## Do some checks
@@ -46,21 +46,72 @@ makeGRM <- function(RAobj, ploid=2, method="VanRaden", indsubset=NULL, nThreads=
   if(is.null(filter$PVALUE)) filter$PVALUE <- 0
   else if( length(filter$PVALUE) != 1 || !is.numeric(filter$PVALUE) || filter$PVALUE<0 || filter$PVALUE>1 )
     stop("P-value for Hardy-Weinberg equilibrium filter is invalid.")
+  if(is.null(filter$PVALUE)) filter$MAXDEPTH <- 500
+  else if( length(filter$PVALUE) != 1 || GUSbase::checkVector(filter$PVALUE, type="pos_integer"))
+    stop("Maximum SNP depth filter is invalid.")
 
   ## initalize the GRM object
   GRMobj <- GRM$new(RAobj, ploid, indsubset)
 
+  ## Compute proportion of missing data
+  miss <- apply(GRMobj$.__enclos_env__$private$ref + GRMobj$.__enclos_env__$private$alt,
+                  2, function(x) sum(x==0)/length(x))
+  ## MAF based on observed reads
+  pfreq <- colMeans(GRMobj$.__enclos_env__$private$ref/(GRMobj$.__enclos_env__$private$ref +
+                                                        GRMobj$.__enclos_env__$private$alt), na.rm=T)
+  maf <- pmin(pfreq,1-pfreq)
+
+  ## Compute mean SNP depth
+  snpdepth <- colMeans(GRMobj$.__enclos_env__$private$ref + GRMobj$.__enclos_env__$private$alt)
+  samdepth <- rowMeans(GRMobj$.__enclos_env__$private$ref + GRMobj$.__enclos_env__$private$alt)
+
+  indx <- which(miss < filter$MISS & maf > filter$MAF & snpdepth < filter$MAXDEPTH)
+
+  chrom <- GRMobj$.__enclos_env__$private$chrom[indx]
+  pos <- GRMobj$.__enclos_env__$private$pos[indx]
+  ## determine the distance between adajcent SNPs
+  if(filter$BIN > 0){
+    oneSNP <- rep(FALSE,length(chrom))
+    oneSNP[unlist(sapply(unique(chrom), function(x){
+      ind <- which(chrom == x)
+      if(length(ind > 1)){
+        g1_diff <- diff(pos[ind])
+        SNP_bin <- c(0,cumsum(g1_diff > filter$BIN)) + 1
+        set.seed(58473+as.numeric(which(x==chrom))[1])
+        keepPos <- sapply(unique(SNP_bin), function(y) {
+          ind2 <- which(SNP_bin == y)
+          if(length(ind2) > 1)
+            return(sample(ind2,size=1))
+          else if(length(ind2) == 1)
+            return(ind2)
+        })
+        return(ind[keepPos])
+      }
+      else return(ind)
+    },USE.NAMES = F ))] <- TRUE
+    oneSNP <- which(oneSNP)
+  }
+  GRMobj$.__enclos_env__$private$miss <- miss[indx[oneSNP]]
+  GRMobj$.__enclos_env__$private$maf <- maf[indx[oneSNP]]
+  GRMobj$.__enclos_env__$private$snpdepth <- snpdepth[indx[oneSNP]]
+  GRMobj$.__enclos_env__$private$samdepth <- samdepth
+  GRMobj$.__enclos_env__$private$ref <- GRMobj$.__enclos_env__$private$ref[,indx[oneSNP]]
+  GRMobj$.__enclos_env__$private$alt <- GRMobj$.__enclos_env__$private$alt[,indx[oneSNP]]
+  GRMobj$.__enclos_env__$private$chrom <- GRMobj$.__enclos_env__$private$chrom[indx[oneSNP]]
+  GRMobj$.__enclos_env__$private$pos <- GRMobj$.__enclos_env__$private$pos[indx[oneSNP]]
+  GRMobj$.__enclos_env__$private$SNP_Names <- GRMobj$.__enclos_env__$private$SNP_Names[indx[oneSNP]]
+  GRMobj$.__enclos_env__$private$nSnps <- length(indx[oneSNP])
+
   ## Compute allele frequencies if required
   if(isTRUE(est$MAF)){
     GRMobj$p_est(nThreads=nThreads)
+  } else{
+    GRMobj$.__enclos_env__$private$pfreq <- pfreq
   }
   ## Compute p-value for HWE if required
   if(isTRUE(est$HWE)){
     GRMobj$HWE_est(nThreads=nThreads)
   }
-  ## Compute proportion of missing data
-  GRMobj$.__enclos_env__$private$miss <- apply(GRMobj$.__enclos_env__$private$ref + GRMobj$.__enclos_env__$private$alt,
-                2, function(x) sum(x==0)/length(x))
 
   ## compute the GRM
   GRMobj$computeGRM(method=method, ep=ep, filter=filter)

@@ -62,7 +62,7 @@ GRM <- R6Class("GRM",
                          if(is.null(filter$PVALUE)) filter$PVALUE <- 0
                          else if( length(filter$PVALUE) != 1 || !is.numeric(filter$PVALUE) || filter$PVALUE<0 || filter$PVALUE>1 )
                            stop("P-value for Hardy-Weinberg equilibrium filter is invalid.")
-                         if(length(method) != 1 || !is.character(method) || any(!(method %in% c("VanRaden","WG"))))
+                         if(length(method) != 1 || !is.character(method) || all(!(method %in% c("VanRaden","WG"))))
                            stop("Method argument must be either 'VanRaden' or 'WG'")
 
 
@@ -103,6 +103,9 @@ GRM <- R6Class("GRM",
                        pfreq  = NULL,
                        pvalue = NULL,
                        miss   = NULL,
+                       maf    = NULL,
+                       snpdepth = NULL,
+                       samdepth = NULL,
                        ep     = NULL,
                        gfreq  = NULL,
                        GRM_VR = NULL,
