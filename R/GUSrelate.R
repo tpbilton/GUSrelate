@@ -51,7 +51,7 @@ GRM <- R6Class("GRM",
                          private$infilename<- GRMobj$.__enclos_env__$private$infilename
                          private$ploid     <- as.integer(ploid)
                        },
-                       computeGRM = function(method="VanRaden", ep=0, filter=list(MAF=NULL, MISS=NULL, PVALUE=NULL), ...){
+                       computeGRM = function(method="VanRaden", ep=0, snpsubset=NULL, filter=list(MAF=NULL, MISS=NULL, PVALUE=NULL),...){
                          ## do some checks
                          if(is.null(filter$MAF)) filter$MAF <- 0
                          else if( length(filter$MAF) != 1 || !is.numeric(filter$MAF) || filter$MAF<0 || filter$MAF>1)
@@ -64,20 +64,23 @@ GRM <- R6Class("GRM",
                            stop("P-value for Hardy-Weinberg equilibrium filter is invalid.")
                          if(length(method) != 1 || !is.character(method) || all(!(method %in% c("VanRaden","WG"))))
                            stop("Method argument must be either 'VanRaden' or 'WG'")
-
+                         if(!is.null(snpsubset) & GUSbase::checkVector(snpsubset, type="pos_integer", maxv=private$nSnps))
+                           stop("SNP subset index is invalid")
 
                          ## compute the subset of SNPs
-                         snpsubset <- rep(TRUE, private$nSnps)
+                         subset <- rep(TRUE, private$nSnps)
+                         if(!is.null(snpsubset))
+                           subset[-snpsubset] <- FALSE
                          if(!is.null(private$pfreq)){
                            maf <- pmin(private$pfreq,1-private$pfreq)
-                           snpsubset[which(maf < filter$MAF)] <- FALSE
+                           subset[which(maf < filter$MAF)] <- FALSE
                          }
                          if(!is.null(private$pvalue))
-                           snpsubset[which(private$pvalue < filter$PVALUE)] <- FALSE
+                           subset[which(private$pvalue < filter$PVALUE)] <- FALSE
                          if(!is.null(private$miss))
-                           snpsubset[which(private$miss > filter$MISS)] <- FALSE
+                           subset[which(private$miss > filter$MISS)] <- FALSE
                          ## compute the GRM
-                         GRMmat <- GUSrelate::computeGRM(private$ref, private$alt, private$ploid, which(snpsubset), method,
+                         GRMmat <- GUSrelate::computeGRM(private$ref, private$alt, private$ploid, which(subset), method,
                                                private$pfreq, ep=ep, ...)
                          ## work which GRM to save
                          if(method == "VanRaden") private$GRM_VR <- GRMmat
