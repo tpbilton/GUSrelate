@@ -90,7 +90,8 @@ makeGRM <- function(RAobj, ploid=2, method="VanRaden", indsubset=NULL, nThreads=
       else return(ind)
     },USE.NAMES = F ))] <- TRUE
     oneSNP <- which(oneSNP)
-  }
+  } else
+    oneSNP <- which(rep(TRUE, length(chrom)))
   GRMobj$.__enclos_env__$private$miss <- miss[indx[oneSNP]]
   GRMobj$.__enclos_env__$private$maf <- maf[indx[oneSNP]]
   GRMobj$.__enclos_env__$private$snpdepth <- snpdepth[indx[oneSNP]]
