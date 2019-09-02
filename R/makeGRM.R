@@ -102,12 +102,13 @@ makeGRM <- function(RAobj, ploid=2, method="VanRaden", indsubset=NULL, nThreads=
   GRMobj$.__enclos_env__$private$pos <- GRMobj$.__enclos_env__$private$pos[indx[oneSNP]]
   GRMobj$.__enclos_env__$private$SNP_Names <- GRMobj$.__enclos_env__$private$SNP_Names[indx[oneSNP]]
   GRMobj$.__enclos_env__$private$nSnps <- length(indx[oneSNP])
+  GRMobj$.__enclos_env__$private$filter <- filter
 
   ## Compute allele frequencies if required
   if(isTRUE(est$MAF)){
     GRMobj$p_est(nThreads=nThreads)
   } else{
-    GRMobj$.__enclos_env__$private$pfreq <- pfreq
+    GRMobj$.__enclos_env__$private$pfreq <- pfreq[indx[oneSNP]]
   }
   ## Compute p-value for HWE if required
   if(isTRUE(est$HWE)){
