@@ -15,6 +15,20 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #########################################################################
+#' GRM method: Construct a genomic relationship matrix (GRM)
+#' 
+#' Method for constructing a genomic relationship matrix (GRM) for a diploid or autopolyploid population.
+#' 
+#' @param name
+#' @param method Character string specifying whether the VanRaden (\code{'VanRaden'}) based estimator or 
+#' the Weir-Goudet (\code{'WG'}) estimator is used to construct the GRM.
+#' @param ep
+#' @param snpsubset
+#' @param filter Named list of thresholds for various filtering criteria.
+#' See below for details.
+#' 
+#' @seealso \code{\link{GRM}}
+#' @author Timothy P. Bilton
 #' @export computeGRM
 
 computeGRM <- function(ref, alt, ploid, snpsubset=NULL, method="VanRaden", phat, ep=0, ...){

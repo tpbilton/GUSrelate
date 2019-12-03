@@ -21,21 +21,20 @@
 #' Class for storing RA data and associated functions for analyzing unstructured populations (e.g.,
 #' populations with no known structure).
 #'
-#' An US object is created from the \code{\link{makeUS}} function and contains RA data,
+#' A GRM object is created from the \code{\link{makeGRM}} function and contains RA data,
 #' various statistics of the dataset that have been computed, and functions (or methods)
-#' for analyzing the data. Information in an US are specific to unrelated populations (or
-#' populations with no known relationships).
+#' for analyzing the data. Information in an GRM are specific to constructing a GRM
 #' @usage
-#' USobj <- makeUS()
+#' GRMobj <- makeGRM()
 #' @format NULL
 #' @author Timothy P. Bilton
-#' @seealso \code{\link{makeUR}}
+#' @seealso \code{\link{makeGRM}}
 #' @name GRM
 #' @export
-### R6 class for creating a data format for unstructured populations
+### R6 class for creating a data format for genomic relationship matrices
 
-GRM <- R6Class("GRM",
-                     inherit = RA,
+GRM <- R6::R6Class("GRM",
+                     inherit = GUSbase::RA,
                      public = list(
                        initialize = function(GRMobj, ploid, indsubset){
                          private$ref       <- GRMobj$.__enclos_env__$private$ref[indsubset,]
@@ -105,7 +104,7 @@ GRM <- R6Class("GRM",
                          private$pvalue <- 1-pchisq(-2*(pest$loglik - gest$loglik), df=private$ploid-1)
                        },
                        ############# Plots for the GRM
-                       PCA = function(name, group1=NULL, group2=NULL, group.hover=NULL, interactive=FALSE){
+                       PCA = function(name, npc=3, group1=NULL, group2=NULL, group.hover=NULL, interactive=FALSE){
                          if(!is.vector(name) || !is.character(name) || length(name) != 1 || !(name %in% names(private$GRM)))
                            stop("Argument 'name' needs to be a character vector of length 1.")
                          else if(!(name %in% names(private$GRM)))
@@ -124,38 +123,39 @@ GRM <- R6Class("GRM",
                          PC$x <- PC$u %*% diag(PC$d[1:npc],nrow=npc) # nrow to get correct behaviour when npc=1
                          ## Sort the groups
                          if(!is.null(group1)) g1 <- private$ginfo[[group1]]
-                         else g1 <- ""
-                         if(!is.null(g2)) g2 <- private$ginfo[[group2]]
-                         else g2 <- ""
+                         else g1 <- NULL
+                         if(!is.null(group2)) g2 <- private$ginfo[[group2]]
+                         else g2 <- NULL
                          ## Produce the plots
                          if(interactive){
                            if(!is.null(group.hover)) hover.info <- apply(sapply(group.hover,function(x) paste0(x,": ",private$ginfo[[x]]),simplify = TRUE),1,paste0,collapse="<br>")
                            else hover.info <- NULL
-                           temp_p <- plot_ly(y=PC$x[, 2],x=PC$x[, 1], type="scatter", mode="markers",
+                           temp_p <- plotly::plot_ly(y=PC$x[, 2],x=PC$x[, 1], type="scatter", mode="markers",
                                              hoverinfo="text", text=hover.info, width=640, height=640,
-                                             marker=list(size=cex.pointsize*6), color=g1, symbol=g2) %>%
-                             layout(xaxis=list(title="Principal component 1",zeroline=FALSE), yaxis=list(title="Principal component 2",zeroline=FALSE))
+                                             marker=list(size=6), color=g1, symbol=g2) %>%
+                             plotly::layout(xaxis=list(title="Principal component 1",zeroline=FALSE), yaxis=list(title="Principal component 2",zeroline=FALSE))
+                           temp_p
                          } else{
                            df <- data.frame(x=PC$x[, 1], y=PC$x[, 2])
-                           ggplot2::ggplot(df, ggplot2::aes(x=x,y=y, colors=g1, shape=g2)) + ggplot2::geom_point() + ggplot2::theme_bw() +
+                           ggplot2::ggplot(df, ggplot2::aes(x=x,y=y, col=g1, shape=g2)) + ggplot2::geom_point() + ggplot2::theme_bw() +
                              ggplot2::ylab("Principal component 2") + ggplot2::xlab("Principal component 1")
                          }
                        },
                        #### add group information
                        addSampleInfo = function(name, info){
                          info <- as.character(info)
-                         if(!is.vector(name) || !is.character(name) || length(name) != 1)
+                         if(!is.vector(name) || !is.character(name) || length(name) != 1 || (name %in% names(private$ginfo)))
                            stop("Argument 'name' needs to be a character vector of length 1.")
                          if(!is.vector(info) || length(info) != private$nInd)
-                           stop("Argument 'name' needs to be a character vector of length 1.")
+                           stop(paste0("Argument 'info' needs to be a character vector of length ",private$nInd,"."))
                          private$ginfo[[name]] <- info
                        },
-                       deleteSampleInfo = function(){
+                       deleteSampleInfo = function(name){
                          if(!is.vector(name) || !is.character(name) || length(name) != 1 || !(name %in% names(private$ginfo)))
                            stop("Argument 'name' needs to be a character vector of length 1.")
                          else if(!(name %in% names(private$ginfo)))
                            stop("Information not found. Check the name of the group.")
-                         ginfo[[name]] <- NULL
+                         private$ginfo[[name]] <- NULL
                        }
                      ),
                      private = list(

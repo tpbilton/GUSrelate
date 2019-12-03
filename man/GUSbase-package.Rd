@@ -11,7 +11,10 @@ via reference and alternate count information from sequence data.
 }
 \details{
 \tabular{ll}{ Package: \tab GUSrelate\cr Type: \tab Package\cr Version: \tab
-0.1.0\cr Date: \tab 2019-02-19\cr License: \tab GPL 3\cr }
+0.2.0\cr Date: \tab 2019-12-03\cr License: \tab GPL-3\cr }
+}
+\references{
+\insertAllCited{}
 }
 \author{
 Timothy P. Bilton, Maintainer: Timothy P. Bilton
