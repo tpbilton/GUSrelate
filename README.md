@@ -50,7 +50,7 @@ grm$computeGRM(name="WG", method="WG")
 A principal component analysis (PCA) plot of the GRM can be produced using the function `$plotPCA`:
 ```
 grm$PCA(name="test")
-
+```
 
 
 ### Funding:
