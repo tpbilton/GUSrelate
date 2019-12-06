@@ -89,10 +89,13 @@ makeGRM <- function(RAobj, name, ploid=2, method="VanRaden", indsubset=NULL, nTh
   if(is.null(filter$PVALUE)) filter$PVALUE <- 0
   else if( length(filter$PVALUE) != 1 || !is.numeric(filter$PVALUE) || filter$PVALUE<0 || filter$PVALUE>1 )
     stop("P-value for Hardy-Weinberg equilibrium filter is invalid.")
-  if(is.null(filter$PVALUE)) filter$MAXDEPTH <- 500
-  else if( length(filter$PVALUE) != 1 || GUSbase::checkVector(filter$PVALUE, type="pos_integer"))
+  if(is.null(filter$MAXDETH)) filter$MAXDEPTH <- 500
+  else if( length(filter$MAXDEPTH) != 1 || GUSbase::checkVector(filter$MAXDEPTH, type="pos_integer"))
     stop("Maximum SNP depth filter is invalid.")
-
+  if(is.null(filter$BIN)) filter$BIN <- 0
+  else if( length(filter$BIN) != 1 || GUSbase::checkVector(filter$BIN, type="pos_integer"))
+    stop("Binning distance filter is invalid.")
+  
   ## initalize the GRM object
   GRMobj <- GRM$new(RAobj, ploid, indsubset)
 

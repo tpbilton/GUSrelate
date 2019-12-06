@@ -19,10 +19,10 @@
 #' 
 #' Method for constructing a genomic relationship matrix (GRM) for a diploid or autopolyploid population.
 #' 
-#' @param name
-#' @param method Character string specifying whether the VanRaden (\code{'VanRaden'}) based estimator or 
+#' @param name A character string giving the name of the GRM analysis
+#' @param method A character string specifying whether the VanRaden (\code{'VanRaden'}) based estimator or 
 #' the Weir-Goudet (\code{'WG'}) estimator is used to construct the GRM.
-#' @param ep
+#' @param ep 
 #' @param snpsubset
 #' @param filter Named list of thresholds for various filtering criteria.
 #' See below for details.
