@@ -19,7 +19,7 @@
 #' Make an genomic relationship matix (GRM) object
 #' 
 #' Create a GRM object from an RA object, perform standard filtering and 
-#' compute statistics specific required for constructing GRMs.
+#' compute statistics required for constructing GRMs.
 #' 
 #' This function converts an RA object into a GRM object. A GRM object is
 #' a R6 type obtain that contains RA data, various statistics related for 
@@ -34,26 +34,29 @@
 #' One SNP is then randomly selected from each bin and retained for final analysis. This filtering is to ensure that there is only one SNP on each sequence read.}
 #' \item{Hardy Weinberg equilibrium (HWE) test P-value (\code{PVALUE}): }{SNPs are discarded if the p-value from a HWE test is smaller than the threshold (default is \code{NULL}).
 #'  This filters out SNPs where the segregation type has been inferred wrong.}
-#' \item{Maximum averge SNP depth (\code{MAXDEPTH}}{SNPs with an average read depth above the threshold value are discarded (default is 500).}
+#' \item{Maximum averge SNP depth (\code{MAXDEPTH}): }{SNPs with an average read depth above the threshold value are discarded (default is 500).}
 #' }
 #' If a filtering criteria is set to \code{NULL}, then no filtering in regard to
 #' that threshold is applied. 
 #' 
+#' If \code{MAF=FALSE}, then the allele frequencies are taken as average of the ratio of reference reads to alternate reads. If \code{MAF=TRUE},
+#' then the allele frequencies are estimated using the likelihood model by \insertCite{li2011bioinform}{GUSrelate}, which assumes HWE.
+#' 
 #' @param RAobj Object of class RA created via the \code{\link[GUSbase]{readRA}} function.
-#' @param name Name of GRM matrix to be constructed.
-#' @param ploid Integer value giving the ploidy level of the individuals in the population.
-#' @param method Character string specifying whether the VanRaden (\code{'VanRaden'}) based estimator or 
+#' @param name A character string giving the name of the GRM analysis.
+#' @param ploid An integer value giving the ploidy level of the individuals in the population.
+#' @param method A character string specifying whether the VanRaden (\code{'VanRaden'}) based estimator or 
 #' the Weir-Goudet (\code{'WG'}) estimator is used to construct the GRM.
-#' @param indsubset
+#' @param indsubset Integer vector giving the indices of the individuals to retain in constructing the GRM.
 #' @param nThreads Integer vector specifying the number of threads to use in the OpenMP parallelization 
-#' used in the estimation of allele frequencies when \code{est=list(mafEst=TRUE)} of in the 
-#' estimation of the p-value from a HWE test when \code{est=list(HWE=TRUE)} 
-#' @param ep   
+#' used in the estimation of allele frequencies when \code{est=list(mafEst=TRUE)} or in the 
+#' estimation of the p-value from a HWE test when \code{est=list(HWE=TRUE)}. 
+#' @param ep A numeric vector specifying the sequencing error rate for each SNP or a numeric value specifying the overall sequencing error rate.   
 #' @param filter Named list of thresholds for various filtering criteria.
 #' See below for details.
 #' @param est Named list specifying whether to estimate the minor frequency (\code{MAF=TRUE})
 #' or to compute the pvalue for the Hardy Weinberg equilibrium (\code{HWE=TRUE}) test 
-#' for each SNP using the method by \insertCite{li2011bioinform}{GUSrelate}
+#' for each SNP using the method by \insertCite{li2011bioinform}{GUSrelate}.
 #' 
 #' @references 
 #' \insertRef{li2011bioinform}{GUSrelate}
@@ -65,7 +68,7 @@
 #### Make an unstructured population
 makeGRM <- function(RAobj, name, ploid=2, method="VanRaden", indsubset=NULL, nThreads=1, ep=0,
                     filter=list(MAF=NULL, MISS=NULL, PVALUE=NULL, MAXDEPTH=500, BIN=100),
-                    est=list(MAF=TRUE, HWE=TRUE)){
+                    est=list(MAF=FALSE, HWE=TRUE)){
 
   ## Do some checks
   if(!all(class(RAobj) %in% c("RA","R6")))
