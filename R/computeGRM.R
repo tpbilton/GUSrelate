@@ -1,6 +1,6 @@
 ##########################################################################
 # Genotyping Uncertainty with Sequencing data for RELATEdness (GUSrelate)
-# Copyright 2019 Timothy P. Bilton <tbilton@maths.otago.ac.nz>
+# Copyright 2019-2021 Timothy P. Bilton
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,8 +22,10 @@
 #' @param name A character string giving the name of the GRM analysis
 #' @param method A character string specifying whether the VanRaden (\code{'VanRaden'}) based estimator or 
 #' the Weir-Goudet (\code{'WG'}) estimator is used to construct the GRM.
+#' @param ploid A positive integer vector specifying the ploidy level of each individual. If only a single value is given,
+#' then the ploidy level is assumed equal in all the individuals.
 #' @param ep 
-#' @param snpsubset
+#' @param snpsubset 
 #' @param filter Named list of thresholds for various filtering criteria.
 #' See below for details.
 #' 
@@ -36,18 +38,22 @@ computeGRM <- function(ref, alt, ploid, snpsubset=NULL, method="VanRaden", phat,
   if(!exists("thres")) thres = 0.001
 
   ## do some checks
-  if(length(method) != 1 || !is.character(method) || any(!(method %in% c("VanRaden","WG"))))
-    stop("Method argument must be either 'VanRaden' or 'WG'")
+  match.arg(method, choices = c("VanRaden","WG"))
   if(all(dim(ref) != dim(alt)))
     stop("The matrix of reference alleles has different dimensions to matrix of alternate alleles")
   else{
     nSnps = ncol(ref)
     nInd  = nrow(ref)
   }
+  if(length(ploid) == 1)
+    ploid = rep(ploid, nInd)
+  else if(GUSbase::checkVector(ploid, type = "pos_integer", minv=1) || length(ploid) != nInd)
+    stop("Input vector ploidy level is invalid.")
+  
   depth <- ref + alt
-  ratio <- (ploid*ref/depth)
+  ratio <- ref/depth
   if(any(!(length(ep) %in% c(1,nSnps)))){
-    warning("Vector for sequecning error parameter is not equal to 1 or the number of SNPs.\nSetting to zero.")
+    warning("Vector for sequencing error parameter is not equal to 1 or the number of SNPs.\nSetting to zero.")
     ep = 0
   }
   if(method=="VanRaden" && (is.null(phat) || length(phat) != nSnps))
@@ -68,35 +74,41 @@ computeGRM <- function(ref, alt, ploid, snpsubset=NULL, method="VanRaden", phat,
 
   if(method == "VanRaden"){
     snpsubset <- which(phat < 1-thres & phat > thres)
+    depth = depth[,snpsubset]
     nsnpsub <- length(snpsubset)
     phat <- phat[snpsubset]
     if(length(ep) > 1) ep = matrix(ep[snpsubset], nrow=nInd, ncol=nsnpsub, byrow=T)
     else               ep = matrix(rep(ep,nsnpsub), nrow=nInd, ncol=nsnpsub, byrow=T)
 
     ## Compute the adjusted GRM
-    genon0 <- ratio[,snpsubset] - ploid*rep.int(phat, rep(nInd, nsnpsub))
-    genon0[is.na(ratio[,snpsubset])] <- 0
-    genon0[depth[,snpsubset]<2] <- 0
+    genon0 <- ratio[,snpsubset] - rep.int(phat, rep(nInd, nsnpsub))
+    genon0[depth<1] = 0
     P0 <- matrix(phat,nrow=nInd,ncol=nsnpsub,byrow=T)
     P1 <- 1-P0
-    P0[depth[,snpsubset]<2] <- 0
-    P1[depth[,snpsubset]<2] <- 0
-    ep[depth[,snpsubset]<2] <- 0
-    div0 <- ploid*tcrossprod(P0,P1)
-    GRM <- (tcrossprod(genon0/sqrt(1-4*ep*(1-ep))) - tcrossprod(sqrt(((ploid*ep)^2*(1-4*P0*P1)/(1-4*ep*(1-ep))))) )/div0
-    depth.temp <- depth
-    depth.temp[which(depth < 2)] <- 0
-    depth.temp <- depth.temp[,snpsubset]
-    depth.temp <- 1/depth.temp
-    depth.temp2 <- depth.temp
-    depth.temp[is.infinite(depth.temp)] <- 1
-    depth.temp2[is.infinite(depth.temp2)] <- 0
-    adj <- ploid^2*(P0*P1*(depth.temp + 4*ep*(1-ep)*(1-depth.temp)) +
-                          ep*(ep+(1-ep)*depth.temp - 4*P0*P1))
-    diag(GRM) <- rowSums(  (genon0^2 - adj)/((1-depth.temp2)*(1-4*ep*(1-ep))))/diag(div0)
+    P0[depth<1] = 0
+    P1[depth<1] = 0
+    ep[depth<1] = 0
+    div0 <- tcrossprod(P0,P1)
+    gammaMat = 1-4*ep*(1-ep)
+    nuMat = 1-4*P0*P1
+    GRM <- (tcrossprod(genon0/sqrt(gammaMat)) - tcrossprod(sqrt((ep^2*nuMat/gammaMat))) )/div0
+    
+    ## Adjustment for self-diagonals
+    genon0[depth==1] = 0
+    gammaMat[depth==1] = 1
+    nuMat[depth==1] = 1
+    P0[depth==1] = 0
+    P1[depth==1] = 0
+    ep[depth==1] = 0
+    deltaMat = 1 - 1/depth
+    deltaMat[depth < 2] = 1
+    adj <- P0*P1*(1 - gammaMat*deltaMat) + ep*(nuMat-(1-ep)*deltaMat)
+    diag(GRM) <- rowSums(  (genon0^2 - adj)/(gammaMat*deltaMat))/rowSums(P0*P1)
+    GRM = sqrt(tcrossprod(ploid))*GRM
     return(GRM)
   }
   else if(method == "WG"){
+    ## currently not implemented
     ratio[which(depth < 2)] <- NA
     snpsubset <- which(!((colMeans(ratio, na.rm=T) == ploid) | (colMeans(ratio, na.rm=T) == 0)))
     ratio <- ratio[, snpsubset]

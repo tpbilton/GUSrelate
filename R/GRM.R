@@ -36,7 +36,7 @@
 GRM <- R6::R6Class("GRM",
                      inherit = GUSbase::RA,
                      public = list(
-                       initialize = function(GRMobj, ploid, indsubset){
+                       initialize = function(GRMobj, ploid, indsubset, saminfo){
                          private$ref       <- GRMobj$.__enclos_env__$private$ref[indsubset,]
                          private$alt       <- GRMobj$.__enclos_env__$private$alt[indsubset,]
                          private$chrom     <- GRMobj$.__enclos_env__$private$chrom
@@ -49,6 +49,7 @@ GRM <- R6::R6Class("GRM",
                          private$AFrq      <- GRMobj$.__enclos_env__$private$AFrq
                          private$infilename<- GRMobj$.__enclos_env__$private$infilename
                          private$ploid     <- as.integer(ploid)
+                         private$samInfo   <- saminfo
                        },
                        computeGRM = function(name, method="VanRaden", ep=0, snpsubset=NULL, filter=list(MAF=NULL, MISS=NULL, PVALUE=NULL),...){
                          ## do some checks
@@ -63,8 +64,7 @@ GRM <- R6::R6Class("GRM",
                          if(is.null(filter$PVALUE)) filter$PVALUE <- 0
                          else if( length(filter$PVALUE) != 1 || !is.numeric(filter$PVALUE) || filter$PVALUE<0 || filter$PVALUE>1 )
                            stop("P-value for Hardy-Weinberg equilibrium filter is invalid.")
-                         if(length(method) != 1 || !is.character(method) || any(!(method %in% c("VanRaden","WG"))))
-                           stop("Method argument must be either 'VanRaden' or 'WG'")
+                         match.arg(method, choices = c("VanRaden","WG"))
                          if(!is.null(snpsubset) & GUSbase::checkVector(snpsubset, type="pos_integer", maxv=private$nSnps))
                            stop("SNP subset index is invalid")
 
@@ -72,31 +72,33 @@ GRM <- R6::R6Class("GRM",
                          subset <- rep(TRUE, private$nSnps)
                          if(!is.null(snpsubset))
                            subset[-snpsubset] <- FALSE
-                         if(!is.null(private$pfreq)){
-                           maf <- pmin(private$pfreq,1-private$pfreq)
-                           subset[which(maf < filter$MAF)] <- FALSE
-                         }
+                         subset[which(private$maf < filter$MAF)] <- FALSE
+                         subset[which(private$miss > filter$MISS)] <- FALSE
+                         
                          if(!is.null(private$pvalue))
                            subset[which(private$pvalue < filter$PVALUE)] <- FALSE
-                         if(!is.null(private$miss))
-                           subset[which(private$miss > filter$MISS)] <- FALSE
+                         else
+                           warning("Ignoring p-value filter as p-values from the Hardy-Weinberg equilibrium test have not been computed. Use the `$HWEtest` function to compute p-values")
+                    
                          ## compute the GRM
                          GRMmat <- GUSrelate::computeGRM(ref=private$ref, alt=private$alt, ploid=private$ploid, snpsubset=which(subset), method=method,
                                                phat=private$pfreq, ep=ep, ...)
                          fil_val <- list(MAF=max(private$filter$MAF,filter$MAF),
                                          MISS=min(private$filter$MISS,filter$MISS),
-                                         PVALUE=max(private$filter$PVALUE,filter$PVALUE))
+                                         PVALUE=filter$PVALUE)
                          GRMlist <- list(GRM=GRMmat, method=method, filter=fil_val, indID=private$indID, snpsubset=snpsubset, ep=ep, freq=private$pfreq[snpsubset])
                          ## work which GRM to save
                          private$GRM[[name]] <- GRMlist
                          return(invisible())
                        },
-                       p_est = function(snpsubset=NULL, indsubset=NULL, nThreads=1, para=NULL, EMpara=NULL){
-                         temp <- GUSbase::p_est_em(private$ref, private$alt, private$ploid, snpsubset=snpsubset,
-                                                            indsubset=indsubset, nThreads=nThreads, para=para, EMpara=EMpara)
-                         private$pfreq <- temp$p
-                       },
-                       HWE_est = function(snpsubset=NULL, indsubset=NULL, nThreads=1, para=NULL, EMpara=NULL){
+                       #p_est = function(snpsubset=NULL, indsubset=NULL, nThreads=1, para=NULL, EMpara=NULL){
+                       #   temp <- GUSbase::p_est_em(private$ref, private$alt, private$ploid, snpsubset=snpsubset,
+                       #                                      indsubset=indsubset, nThreads=nThreads, para=para, EMpara=EMpara)
+                       #   private$pfreq <- temp$p
+                       #},
+                       HWEtest = function(snpsubset=NULL, indsubset=NULL, nThreads=1, para=NULL, EMpara=NULL){
+                         if(length(unique(private$ploid[indsubset])!=1))
+                           stop("HWE test is not yet implemented for mixed ploidy populations.")
                          pest <- GUSbase::p_est_em(private$ref, private$alt, private$ploid, snpsubset=snpsubset,
                                                    indsubset=indsubset, nThreads=nThreads, para=para, EMpara=EMpara)
                          gest <- GUSbase::g_est_em(private$ref, private$alt, private$ploid, snpsubset=snpsubset,
@@ -105,7 +107,7 @@ GRM <- R6::R6Class("GRM",
                        },
                        ############# Plots for the GRM
                        PCA = function(name, npc=3, group1=NULL, group2=NULL, group.hover=NULL, interactive=FALSE){
-                         if(!is.vector(name) || !is.character(name) || length(name) != 1 || !(name %in% names(private$GRM)))
+                         if(!is.vector(name) || !is.character(name) || length(name) != 1)
                            stop("Argument 'name' needs to be a character vector of length 1.")
                          else if(!(name %in% names(private$GRM)))
                            stop("GRM not found. Check the name of the GRM group.")
@@ -157,12 +159,16 @@ GRM <- R6::R6Class("GRM",
                            stop("Information not found. Check the name of the group.")
                          private$ginfo[[name]] <- NULL
                        },
-                       writeGRM = function(name, filename){
-                         if(!is.vector(name) || !is.character(name) || length(name) != 1 || !(name %in% names(private$ginfo)))
+                       writeGRM = function(name, filename, IDvar=NULL){
+                         if(!is.vector(name) || !is.character(name) || length(name) != 1 || !(name %in% names(private$GRM)))
                            stop("Argument 'name' needs to be a character vector of length 1.")
                          
                          GRM <- private$GRM[[name]]$GRM
-                         colnames(GRM) <- rowname(GRM) <- private$indID
+                         if(!is.null(IDvar)){
+                           match.arg(IDvar, names(private$sam))
+                           colnames(GRM) <- rowname(GRM) <- private$samInfo[[IDvar]]
+                         } else colnames(GRM) <- rowname(GRM) <- private$indID
+                         
                          write.table(GRM, file = filename)
                        }
                      ),
@@ -179,6 +185,7 @@ GRM <- R6::R6Class("GRM",
                        gfreq  = NULL,
                        GRM    = NULL,
                        filter = NULL,
-                       ginfo  = NULL
+                       ginfo  = NULL,
+                       samInfo = NULL
                      )
 )

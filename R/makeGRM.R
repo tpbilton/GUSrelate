@@ -1,6 +1,6 @@
 ##########################################################################
 # Genotyping Uncertainty with Sequencing data and RELATEdness (GUSrelate)
-# Copyright 2019 Timothy P. Bilton <tbilton@maths.otago.ac.nz>
+# Copyright 2019-2021 Timothy P. Bilton
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -66,32 +66,23 @@
 #' @export makeGRM
 
 #### Make an unstructured population
-makeGRM <- function(RAobj, name, ploid=2, method="VanRaden", indsubset=NULL, nThreads=1, ep=0,
-                    filter=list(MAF=NULL, MISS=NULL, PVALUE=NULL, MAXDEPTH=500, BIN=100),
-                    est=list(MAF=FALSE, HWE=TRUE)){
+makeGRM <- function(RAobj, samfile, filter=list(MAF=NULL, MISS=NULL, MAXDEPTH=500, BIN=100)){
 
   ## Do some checks
   if(!all(class(RAobj) %in% c("RA","R6")))
     stop("First argument supplied is not of class 'R6' and 'RA'")
-  if(!is.vector(name) || !is.character(name) || length(name) != 1)
-    stop("Argument `name` is invalid.")
-  if(!is.vector(ploid) || !is.numeric(ploid) || length(ploid) != 1 || round(ploid/2) != ploid/2)
-    stop("Argument for ploid level is invalid.")
-  if(!is.numeric(nThreads) || length(nThreads) != 1 || nThreads < 0 || round(nThreads) != nThreads)
-    stop("Argument for the number of cores for the MPI parallelization is invalid")
-  if(is.null(indsubset))
-    indsubset <- 1:RAobj$.__enclos_env__$private$nInd
-  if(GUSbase::checkVector(indsubset, type="pos_integer", minv=1, maxv=RAobj$.__enclos_env__$private$nInd))
-    stop("Argument for the indices of the individuals is invalid.")
+  if(!is.vector(samfile) || !is.character(samfile) || length(samfile) != 1)
+    stop("Argument `saminfo` is invalid. Must be a character of length 1.")
+  else if(!file.exists(samfile))
+    stop("File for sample information is not found")
+  
+  ## check filter values
   if(is.null(filter$MAF)) filter$MAF <- 0
   else if( length(filter$MAF) != 1 || !is.numeric(filter$MAF) || filter$MAF<0 || filter$MAF>1)
     stop("Minor allele frequency filter is invalid")
   if(is.null(filter$MISS)) filter$MISS <- 1
   else if( length(filter$MISS) != 1 || !is.numeric(filter$MISS) || filter$MISS<0 || filter$MISS>1 )
     stop("Proportion of missing data filter is invalid")
-  if(is.null(filter$PVALUE)) filter$PVALUE <- 0
-  else if( length(filter$PVALUE) != 1 || !is.numeric(filter$PVALUE) || filter$PVALUE<0 || filter$PVALUE>1 )
-    stop("P-value for Hardy-Weinberg equilibrium filter is invalid.")
   if(is.null(filter$MAXDETH)) filter$MAXDEPTH <- 500
   else if( length(filter$MAXDEPTH) != 1 || GUSbase::checkVector(filter$MAXDEPTH, type="pos_integer"))
     stop("Maximum SNP depth filter is invalid.")
@@ -99,25 +90,46 @@ makeGRM <- function(RAobj, name, ploid=2, method="VanRaden", indsubset=NULL, nTh
   else if( length(filter$BIN) != 1 || GUSbase::checkVector(filter$BIN, type="pos_integer"))
     stop("Binning distance filter is invalid.")
   
+  ## read in the same information file:
+  saminfo = as.data.frame(data.table::fread(samfile, header=T))
+  
+  ## Checks on the same info file
+  if(nrow(samInfo)<2)
+    stop("There is less than two samples in the sample file. Cannot proceed.")
+  # Sample IDs and ploidy values are present sample info?
+  if(all((names(saminfo) != "ID")))
+    stop("No column for sample IDs in sample file")
+  if(all((names(saminfo) != "Ploidy")))
+    stop("No column for ploidy values in sample file")
+  # Ploidy values are valid?
+  if(GUSbase::checkVector(saminfo$Ploidy, type="pos_integer", minv=1))
+    stop("Ploidy values in sample file are invalid. These need to be non-missing positive integers")
+  # Sample IDs in RA data?
+  indIndex = which(saminfo$ID %in% RA$.__enclos_env__$private$indID)
+  if(any(is.na(indIndex)))
+    stop("Sample file has ID not present in RA dataset")
+  
   ## initalize the GRM object
-  GRMobj <- GRM$new(RAobj, ploid, indsubset)
+  GRMobj <- GRM$new(RAobj, saminfo$Ploidy, indIndex, saminfo)
+  
+  ## compute depth matrix
+  depth = GRMobj$.__enclos_env__$private$ref + GRMobj$.__enclos_env__$private$alt
 
   ## Compute proportion of missing data
-  miss <- apply(GRMobj$.__enclos_env__$private$ref + GRMobj$.__enclos_env__$private$alt,
-                  2, function(x) sum(x==0)/length(x))
+  miss <- apply(depth, 2, function(x) sum(x==0)/length(x))
   ## MAF based on observed reads
-  pfreq <- colMeans(GRMobj$.__enclos_env__$private$ref/(GRMobj$.__enclos_env__$private$ref +
-                                                        GRMobj$.__enclos_env__$private$alt), na.rm=T)
+  pfreq <- colMeans(GRMobj$.__enclos_env__$private$ref/depth, na.rm=T)
   maf <- pmin(pfreq,1-pfreq)
 
   ## Compute mean SNP depth
-  snpdepth <- colMeans(GRMobj$.__enclos_env__$private$ref + GRMobj$.__enclos_env__$private$alt)
-  samdepth <- rowMeans(GRMobj$.__enclos_env__$private$ref + GRMobj$.__enclos_env__$private$alt)
+  snpdepth <- colMeans(depth)
+  samdepth <- rowMeans(depth)
 
+  ## filter SNPs
   indx <- which(miss < filter$MISS & maf > filter$MAF & snpdepth < filter$MAXDEPTH)
-
   chrom <- GRMobj$.__enclos_env__$private$chrom[indx]
   pos <- GRMobj$.__enclos_env__$private$pos[indx]
+  
   ## determine the distance between adajcent SNPs
   if(filter$BIN > 0){
     oneSNP <- rep(FALSE,length(chrom))
@@ -152,20 +164,6 @@ makeGRM <- function(RAobj, name, ploid=2, method="VanRaden", indsubset=NULL, nTh
   GRMobj$.__enclos_env__$private$SNP_Names <- GRMobj$.__enclos_env__$private$SNP_Names[indx[oneSNP]]
   GRMobj$.__enclos_env__$private$nSnps <- length(indx[oneSNP])
   GRMobj$.__enclos_env__$private$filter <- filter
-
-  ## Compute allele frequencies if required
-  if(isTRUE(est$MAF)){
-    GRMobj$p_est(nThreads=nThreads)
-  } else{
-    GRMobj$.__enclos_env__$private$pfreq <- pfreq[indx[oneSNP]]
-  }
-  ## Compute p-value for HWE if required
-  if(isTRUE(est$HWE)){
-    GRMobj$HWE_est(nThreads=nThreads)
-  }
-
-  ## compute the GRM
-  GRMobj$computeGRM(name=name, method=method, ep=ep, filter=filter)
 
   ## return the GRM object
   return(GRMobj)
