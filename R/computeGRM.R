@@ -82,8 +82,13 @@ computeGRM <- function(ref, alt, ploid, snpsubset=NULL, method="VanRaden", phat,
     P0[depth[,snpsubset]<2] <- 0
     P1[depth[,snpsubset]<2] <- 0
     ep[depth[,snpsubset]<2] <- 0
-    div0 <- ploid*tcrossprod(P0,P1)
-    GRM <- (tcrossprod(genon0/sqrt(1-4*ep*(1-ep))) - tcrossprod(sqrt(((ploid*ep)^2*(1-4*P0*P1)/(1-4*ep*(1-ep))))) )/div0
+    pmat = tcrossprod(P0,P1)
+    div0 <- ploid*pmat
+    tempmat = genon0/sqrt(1-4*ep*(1-ep))
+    firstmat = tcrossprod(tempmat)
+    tempmat = sqrt(((ploid*ep)^2*(1-4*P0*P1)/(1-4*ep*(1-ep))))
+    secondmat = tcrossprod(tempmat)
+    GRM <- (firstmat - secondmat)/div0
     depth.temp <- depth
     depth.temp[which(depth < 2)] <- 0
     depth.temp <- depth.temp[,snpsubset]
