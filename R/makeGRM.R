@@ -16,14 +16,31 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #########################################################################
 
-#' Make an genomic relationship matix (GRM) object
+#' Make an GRM object
 #' 
-#' Create a GRM object from an RA object, perform standard filtering and 
+#' Create a genomic relationship matix (GRM) object from an RA object, perform standard filtering and 
 #' compute statistics required for constructing GRMs.
 #' 
 #' This function converts an RA object into a GRM object. A GRM object is
-#' a R6 type obtain that contains RA data, various statistics related for 
+#' a R6 type object that contains RA data, various statistics related 
 #' to GRM analyses and functions (methods) for analysing GRMs.
+#' 
+#' The sample information as specified in the \code{samfile} argument should be a csv file with the first column
+#' giving the ID of the sample (and must match the IDs in the RA object supplied in the \code{RAobj} argument) and
+#' the second column giving the ploidy level of each individual. Additional columns can then be added to the that
+#' gives more information about the sample (e.g., cultivar, location, population). For example,
+#' \tabular{lll}{
+#' ID \tab Ploidy \tab Group \cr
+#' HE109 \tab 2 \tab Wild \cr
+#' PE202 \tab 4 \tab Wild \cr
+#' PE243 \tab 4 \tab Domesticated   
+#' }
+#' In this example, there are three individuals, the first (HE109) is a diploid and belongs to the Wild group,
+#' the second individual (PE202) is a tetraploid that also belongs to the Wild group and the third individual
+#' (PE243) is also a tetraploid but belongs to the Domesticated group. 
+#' Note that the names for the first two columns must be "ID" and "Ploid" respectively, but any names can
+#' be used for the remaining columns but it is recommended meaning name without spaced. Remeber that the first
+#' two are required, any extra columns are optional but can be used later. 
 #' 
 #' The filtering criteria currently implemented are:
 #' \iterize{
@@ -32,41 +49,25 @@
 #'  is greater than the threshold value (default is \code{NULL}).}
 #' \item{Bin size for SNP selection (\code{BIN}): }{SNPs are binned together if the distance (in base pairs) between them is less than the threshold value (default is 100).
 #' One SNP is then randomly selected from each bin and retained for final analysis. This filtering is to ensure that there is only one SNP on each sequence read.}
-#' \item{Hardy Weinberg equilibrium (HWE) test P-value (\code{PVALUE}): }{SNPs are discarded if the p-value from a HWE test is smaller than the threshold (default is \code{NULL}).
-#'  This filters out SNPs where the segregation type has been inferred wrong.}
 #' \item{Maximum averge SNP depth (\code{MAXDEPTH}): }{SNPs with an average read depth above the threshold value are discarded (default is 500).}
 #' }
 #' If a filtering criteria is set to \code{NULL}, then no filtering in regard to
 #' that threshold is applied. 
 #' 
-#' If \code{MAF=FALSE}, then the allele frequencies are taken as average of the ratio of reference reads to alternate reads. If \code{MAF=TRUE},
-#' then the allele frequencies are estimated using the likelihood model by \insertCite{li2011bioinform}{GUSrelate}, which assumes HWE.
-#' 
 #' @param RAobj Object of class RA created via the \code{\link[GUSbase]{readRA}} function.
-#' @param name A character string giving the name of the GRM analysis.
-#' @param ploid An integer value giving the ploidy level of the individuals in the population.
+#' @param samfile Character string giving the name of the file that contains the sample information of the population. 
+#' See below for details.
 #' @param method A character string specifying whether the VanRaden (\code{'VanRaden'}) based estimator or 
 #' the Weir-Goudet (\code{'WG'}) estimator is used to construct the GRM.
-#' @param indsubset Integer vector giving the indices of the individuals to retain in constructing the GRM.
-#' @param nThreads Integer vector specifying the number of threads to use in the OpenMP parallelization 
-#' used in the estimation of allele frequencies when \code{est=list(mafEst=TRUE)} or in the 
-#' estimation of the p-value from a HWE test when \code{est=list(HWE=TRUE)}. 
-#' @param ep A numeric vector specifying the sequencing error rate for each SNP or a numeric value specifying the overall sequencing error rate.   
 #' @param filter Named list of thresholds for various filtering criteria.
 #' See below for details.
-#' @param est Named list specifying whether to estimate the minor frequency (\code{MAF=TRUE})
-#' or to compute the pvalue for the Hardy Weinberg equilibrium (\code{HWE=TRUE}) test 
-#' for each SNP using the method by \insertCite{li2011bioinform}{GUSrelate}.
-#' 
-#' @references 
-#' \insertRef{li2011bioinform}{GUSrelate}
 #' 
 #' @author Timothy P. Bilton
 #' @return An R6 object of class GRM.
 #' @export makeGRM
 
 #### Make an unstructured population
-makeGRM <- function(RAobj, samfile, filter=list(MAF=NULL, MISS=NULL, MAXDEPTH=500, BIN=100)){
+makeGRM <- function(RAobj, samfile, filter=list(MAF=NULL, MISS=NULL, BIN=100, MAXDEPTH=500)){
 
   ## Do some checks
   if(!all(class(RAobj) %in% c("RA","R6")))
@@ -93,8 +94,8 @@ makeGRM <- function(RAobj, samfile, filter=list(MAF=NULL, MISS=NULL, MAXDEPTH=50
   ## read in the same information file:
   saminfo = as.data.frame(data.table::fread(samfile, header=T))
   
-  ## Checks on the same info file
-  if(nrow(samInfo)<2)
+  ## Checks on the sample info file
+  if(nrow(saminfo)<2)
     stop("There is less than two samples in the sample file. Cannot proceed.")
   # Sample IDs and ploidy values are present sample info?
   if(all((names(saminfo) != "ID")))
@@ -105,12 +106,14 @@ makeGRM <- function(RAobj, samfile, filter=list(MAF=NULL, MISS=NULL, MAXDEPTH=50
   if(GUSbase::checkVector(saminfo$Ploidy, type="pos_integer", minv=1))
     stop("Ploidy values in sample file are invalid. These need to be non-missing positive integers")
   # Sample IDs in RA data?
-  indIndex = which(saminfo$ID %in% RA$.__enclos_env__$private$indID)
-  if(any(is.na(indIndex)))
-    stop("Sample file has ID not present in RA dataset")
+  indIndex = saminfo$ID %in% RAobj$.__enclos_env__$private$indID
+  if(any(!indIndex))
+    stop(paste0("Sample ID(s) not present in RA dataset:\n",
+                paste(saminfo$ID[!indIndex],collapse = "\n")))
   
   ## initalize the GRM object
-  GRMobj <- GRM$new(RAobj, saminfo$Ploidy, indIndex, saminfo)
+  indIndex_ra = match(RAobj$.__enclos_env__$private$indID, saminfo$ID)
+  GRMobj <- GRM$new(RAobj, saminfo$Ploidy, indIndex_ra, saminfo[indIndex,])
   
   ## compute depth matrix
   depth = GRMobj$.__enclos_env__$private$ref + GRMobj$.__enclos_env__$private$alt
@@ -133,7 +136,7 @@ makeGRM <- function(RAobj, samfile, filter=list(MAF=NULL, MISS=NULL, MAXDEPTH=50
   ## determine the distance between adajcent SNPs
   if(filter$BIN > 0){
     oneSNP <- rep(FALSE,length(chrom))
-    oneSNP[unlist(sapply(unique(chrom), function(x){
+    temp = sapply(unique(chrom), function(x){
       ind <- which(chrom == x)
       if(length(ind > 1)){
         g1_diff <- diff(pos[ind])
@@ -149,11 +152,13 @@ makeGRM <- function(RAobj, samfile, filter=list(MAF=NULL, MISS=NULL, MAXDEPTH=50
         return(ind[keepPos])
       }
       else return(ind)
-    },USE.NAMES = F ))] <- TRUE
+    },USE.NAMES = F)
+    oneSNP[unlist(temp)] <- TRUE
     oneSNP <- which(oneSNP)
   } else
     oneSNP <- which(rep(TRUE, length(chrom)))
   GRMobj$.__enclos_env__$private$miss <- miss[indx[oneSNP]]
+  GRMobj$.__enclos_env__$private$pfreq <- pfreq[indx[oneSNP]]
   GRMobj$.__enclos_env__$private$maf <- maf[indx[oneSNP]]
   GRMobj$.__enclos_env__$private$snpdepth <- snpdepth[indx[oneSNP]]
   GRMobj$.__enclos_env__$private$samdepth <- samdepth
@@ -164,6 +169,19 @@ makeGRM <- function(RAobj, samfile, filter=list(MAF=NULL, MISS=NULL, MAXDEPTH=50
   GRMobj$.__enclos_env__$private$SNP_Names <- GRMobj$.__enclos_env__$private$SNP_Names[indx[oneSNP]]
   GRMobj$.__enclos_env__$private$nSnps <- length(indx[oneSNP])
   GRMobj$.__enclos_env__$private$filter <- filter
+  
+  ## update summary information
+  temp <- GRMobj$.__enclos_env__$private$ref + GRMobj$.__enclos_env__$private$alt
+  summaryInfo = list(
+    header="Data Summary:\n",
+    file=paste0("Data file:\t\t",GRMobj$.__enclos_env__$private$rafile,"\n"),
+    meandepth=paste0("Mean Depth:\t\t", round(mean(temp),2),"\n"),
+    callrate=paste0("Mean Call Rate:\t",round(sum(temp!=0)/length(temp),2),"\n"),
+    num="Number of...\n",
+    samples=paste0("  Samples:\t\t",GRMobj$.__enclos_env__$private$nInd,"\n"),
+    snps=paste0("  SNPs:\t\t",GRMobj$.__enclos_env__$private$nSnps,"\n"),
+    reads=paste0("  Reads:\t\t",sum(temp),"\n"))
+  GRMobj$.__enclos_env__$private$summaryInfo = summaryInfo
 
   ## return the GRM object
   return(GRMobj)

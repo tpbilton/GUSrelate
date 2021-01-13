@@ -1,6 +1,6 @@
 ##########################################################################
 # Genotyping Uncertainty with Sequencing data and RELATEdness (GUSrelate)
-# Copyright 2019 Timothy P. Bilton <tbilton@maths.otago.ac.nz>
+# Copyright 2019-2021 Timothy P. Bilton
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
 #' Class for storing RA data and associated functions for analyzing unstructured populations (e.g.,
 #' populations with no known structure).
 #'
-#' A GRM object is created from the \code{\link{makeGRM}} function and contains RA data,
+#' A genomic relationship matrix (GRM) object is created from the \code{\link{makeGRM}} function and contains RA data,
 #' various statistics of the dataset that have been computed, and functions (or methods)
 #' for analyzing the data. Information in an GRM are specific to constructing a GRM
 #' @usage
@@ -51,6 +51,20 @@ GRM <- R6::R6Class("GRM",
                          private$ploid     <- as.integer(ploid)
                          private$samInfo   <- saminfo
                        },
+                       ########### Print function:
+                       print = function(what = NULL, ...){
+                         cat(unlist(private$summaryInfo))
+                         
+                         if(!is.null(private$GRM)){
+                           cat("GRMs in object:\n\n")
+                           listOfGRM = names(private$GRM)
+                           junk = sapply(listOfGRM, function(x) {
+                             cat(private$GRM[[x]]$sumInfo)
+                             return(invisible())
+                           })
+                         }
+                       },
+                       ########### Function to construct a genomic relationship matrix (GRM)
                        computeGRM = function(name, method="VanRaden", ep=0, snpsubset=NULL, filter=list(MAF=NULL, MISS=NULL, PVALUE=NULL),...){
                          ## do some checks
                          if(!is.vector(name) || !is.character(name) || length(name) != 1)
@@ -86,10 +100,19 @@ GRM <- R6::R6Class("GRM",
                          fil_val <- list(MAF=max(private$filter$MAF,filter$MAF),
                                          MISS=min(private$filter$MISS,filter$MISS),
                                          PVALUE=filter$PVALUE)
-                         GRMlist <- list(GRM=GRMmat, method=method, filter=fil_val, indID=private$indID, snpsubset=snpsubset, ep=ep, freq=private$pfreq[snpsubset])
+                         ## compute summary information:
+                         summaryInfo = c("Name: ", name, "\n  Number of individuals: ",nrow(GRMmat), "\n  Number of SNPs: ",sum(subset), 
+                                           "\n  Mean Depth: ", mean(private$ref[, which(subset)] + private$alt[, which(subset)]),
+                                           "\n  Mean Self-relatedness: ", mean(diag(GRMmat)),"\n  Filtering (retained SNPs):",
+                                           "\n    MAF: > ",fil_val$MAF, "\n    % Missing: <", fil_val$MISS*100, "%", 
+                                           "\n    p-value: > ", filter$PVALUE, "\n")
+                         ## Same GRM and associated information to GRM object
+                         GRMlist <- list(GRM=GRMmat, method=method, filter=fil_val, indID=private$indID, snpsubset=which(subset), ep=ep, freq=private$pfreq[snpsubset], sumInfo = summaryInfo)
                          ## work which GRM to save
                          private$GRM[[name]] <- GRMlist
-                         return(invisible())
+                         ## print out summary information
+                         cat("GRM computed:\n", summaryInfo, sep="")
+                         return(invisible(NULL))
                        },
                        #p_est = function(snpsubset=NULL, indsubset=NULL, nThreads=1, para=NULL, EMpara=NULL){
                        #   temp <- GUSbase::p_est_em(private$ref, private$alt, private$ploid, snpsubset=snpsubset,
@@ -97,16 +120,40 @@ GRM <- R6::R6Class("GRM",
                        #   private$pfreq <- temp$p
                        #},
                        HWEtest = function(snpsubset=NULL, indsubset=NULL, nThreads=1, para=NULL, EMpara=NULL){
-                         if(length(unique(private$ploid[indsubset])!=1))
-                           stop("HWE test is not yet implemented for mixed ploidy populations.")
-                         pest <- GUSbase::p_est_em(private$ref, private$alt, private$ploid, snpsubset=snpsubset,
+                         if(is.null(indsubset)) indsubset = 1:private$nInd
+                         else if(GUSbase::checkVector(indsubset, type = "pos_integer", minv = 0, maxv = private$nInd))
+                           stop("Index for individuals is invalid")
+                         ploidy = unique(private$ploid[indsubset])
+                         if(length(ploidy) != 1)
+                           stop("HWE test is not yet implemented for mixed-ploidy populations.")
+                         pest <- GUSbase::p_est_em(private$ref, private$alt, ploidy, snpsubset=snpsubset,
                                                    indsubset=indsubset, nThreads=nThreads, para=para, EMpara=EMpara)
-                         gest <- GUSbase::g_est_em(private$ref, private$alt, private$ploid, snpsubset=snpsubset,
+                         gest <- GUSbase::g_est_em(private$ref, private$alt, ploidy, snpsubset=snpsubset,
                                                    indsubset=indsubset, nThreads=nThreads, para=para, EMpara=EMpara)
-                         private$pvalue <- 1-pchisq(-2*(pest$loglik - gest$loglik), df=private$ploid-1)
+                         private$pvalue <- 1-pchisq(-2*(pest$loglik - gest$loglik), df=ploidy-1)
+                       },
+                       ############# Delete a computed GRM:
+                       removeGRM = function(name){
+                         if(!is.vector(name) || !is.character(name))
+                           stop("Argument 'name' needs to be a character vector")
+                         if(any(!(name %in% names(private$GRM))))
+                           stop("At least one GRM cannot be found: Check the names")
+                         private$GRM[name] = NULL
+                         if(length(private$GRM) == 1)
+                           private$GRM = NULL
+                       },
+                       ############# Plot relatedness estimates
+                       plotGRM = function(type=c("histrogram","scatter"),values=c("both","self-relatedness","relatednes"), xaxis=NULL,
+                                          interactive=FALSE){
+                         stop("yet to be implemeted")
+                       },
+                       ############ Compare different GRMs:
+                       CompareGRM = function(){
+                         stop("yet to be implemeted")
                        },
                        ############# Plots for the GRM
                        PCA = function(name, npc=3, group1=NULL, group2=NULL, group.hover=NULL, interactive=FALSE){
+                         stop("yet to be implemented")
                          if(!is.vector(name) || !is.character(name) || length(name) != 1)
                            stop("Argument 'name' needs to be a character vector of length 1.")
                          else if(!(name %in% names(private$GRM)))
@@ -144,32 +191,65 @@ GRM <- R6::R6Class("GRM",
                          }
                        },
                        #### add group information
-                       addSampleInfo = function(name, info){
-                         info <- as.character(info)
-                         if(!is.vector(name) || !is.character(name) || length(name) != 1 || (name %in% names(private$ginfo)))
-                           stop("Argument 'name' needs to be a character vector of length 1.")
-                         if(!is.vector(info) || length(info) != private$nInd)
-                           stop(paste0("Argument 'info' needs to be a character vector of length ",private$nInd,"."))
-                         private$ginfo[[name]] <- info
-                       },
-                       deleteSampleInfo = function(name){
-                         if(!is.vector(name) || !is.character(name) || length(name) != 1 || !(name %in% names(private$ginfo)))
-                           stop("Argument 'name' needs to be a character vector of length 1.")
-                         else if(!(name %in% names(private$ginfo)))
-                           stop("Information not found. Check the name of the group.")
-                         private$ginfo[[name]] <- NULL
-                       },
-                       writeGRM = function(name, filename, IDvar=NULL){
-                         if(!is.vector(name) || !is.character(name) || length(name) != 1 || !(name %in% names(private$GRM)))
-                           stop("Argument 'name' needs to be a character vector of length 1.")
+                       addSampleInfo = function(samfile){
+                         if(!is.vector(samfile) || !is.character(samfile) || length(samfile) != 1)
+                           stop("Argument `saminfo` is invalid. Must be a character of length 1.")
+                         else if(!file.exists(samfile))
+                           stop("File for sample information is not found")
                          
+                         ## read in the same information file:
+                         saminfo = as.data.frame(data.table::fread(samfile, header=T))
+                         
+                         # Checks on the sample file
+                         if(all((names(saminfo) != "ID")))
+                           stop("No column for sample IDs in sample file")
+                         if(any(colnames(samfile) == "Ploidy"))
+                           stop("Ploidy column in sample file. Please remove")
+                         if(ncol(saminfo) < 2)
+                           stop("Only one column present in sample file: No extra information to add.")
+                         existingVar = colnames(saminfo)[-which(colnames(saminfo) == "ID")] %in% colnames(private$samInfo)[-which(colnames(private$samInfo) == "ID")]
+                         if(any(existingVar))
+                           stop(paste("Variables already present in the GRM object:",
+                                      paste(colnames(saminfo)[-which(colnames(saminfo) == "ID")][existingVar], collapse = "\n  "), sep="\n"))
+                         if(nrow(saminfo) != nrow(private$samInfo))
+                           stop(paste0("different number of individuals in sample file than in GRM object. Expected ", nrow(private$samInfo), " rows."))
+                         if(any(!(saminfo$ID %in% private$samInfo$ID)))
+                           stop(paste("The following sample IDs not found in the GRM object:",
+                                       saminfo$ID[!(saminfo$ID %in% private$samInfo$ID)],"\n", sep="\n  "))
+                         if(any(duplicated(saminfo$ID)))
+                           stop(paste("Sample ID(s) duplicated in the sample information file:",
+                                      paste(saminfo$ID[duplicated(saminfo$ID)], collapse = "\n  "), sep="\n  "))
+                         
+                         ## Add sample information
+                         private$samInfo = merge(private$samInfo, saminfo, by = "ID", sort=FALSE)
+                         return(invisible(NULL))
+                       },
+                       ############# Delete group information
+                       removeSampleInfo = function(name){
+                         if(!is.vector(name) || !is.character(name))
+                           stop("Argument 'name' needs to be a character vector")
+                         else if(!(name %in% colnames(private$samInfo)))
+                           stop("Variable not found. Check the name of the group.")
+                         else if(any(name %in% c("ID","Ploidy")))
+                           stop("Cannot drop the 'ID' or 'Ploidy' columns")
+                         private$samInfo = subset(private$samInfo, select = setdiff(colnames(private$samInfo), name))
+                       },
+                       ########### Write GRM to file
+                       writeGRM = function(name, filename, IDvar=NULL){
+                         if(!is.vector(name) || !is.character(name) || length(name) != 1)
+                           stop("Argument 'name' needs to be a character vector of length 1.")
+                         if(!(name %in% names(private$GRM)))
+                           stop("Cannot find GRM. Chech the 'name' argument")
+                         
+                         ## extract GRM and put the specified IDs on rows and columns
                          GRM <- private$GRM[[name]]$GRM
                          if(!is.null(IDvar)){
                            match.arg(IDvar, names(private$sam))
                            colnames(GRM) <- rowname(GRM) <- private$samInfo[[IDvar]]
                          } else colnames(GRM) <- rowname(GRM) <- private$indID
                          
-                         write.table(GRM, file = filename)
+                         ## write GRM to file
+                         write.csv(GRM, file = filename)
                        }
                      ),
                      private = list(
@@ -185,7 +265,6 @@ GRM <- R6::R6Class("GRM",
                        gfreq  = NULL,
                        GRM    = NULL,
                        filter = NULL,
-                       ginfo  = NULL,
                        samInfo = NULL
                      )
 )
