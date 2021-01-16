@@ -112,7 +112,7 @@ makeGRM <- function(RAobj, samfile, filter=list(MAF=NULL, MISS=NULL, BIN=100, MA
                 paste(saminfo$ID[!indIndex],collapse = "\n")))
   
   ## initalize the GRM object
-  indIndex_ra = na.omit(match(RAobj$.__enclos_env__$private$indID, saminfo$ID))
+  indIndex_ra = match(saminfo$ID,RAobj$.__enclos_env__$private$indID)
   GRMobj <- GRM$new(RAobj, saminfo$Ploidy, indIndex_ra, saminfo[indIndex,])
   
   ## compute depth matrix
