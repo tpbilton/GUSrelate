@@ -35,7 +35,8 @@ The next step is to create a metadata file containing ploidy information of each
 
 The next step is to create an GRM object.
 ```
-grm <- makeGRM(RAobj=radata, samfile=sim_metaInfo, filter=list(MAF=NULL, MISS=NULL, BIN=100, MAXDEPTH=500))
+grm <- makeGRM(RAobj=radata, samfile=sim_metaInfo, 
+               filter=list(MAF=NULL, MISS=NULL, BIN=100, MAXDEPTH=500))
 ```
 The arguments of the `makeGRM` function are:
 
