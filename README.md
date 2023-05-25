@@ -58,7 +58,8 @@ Comments on the `$HWEtest` function:
 
 A GRM can be computed using the `$computeGRM` function as follows:
 ```
-grm$computeGRM(name = "GRM_VR", method="VanRaden", ep=0, snpsubset=NULL, filter=list(MAF=NULL, MISS=NULL, PVALUE=0.01))
+grm$computeGRM(name = "GRM_VR", method="VanRaden", ep=0, snpsubset=NULL, 
+               filter=list(MAF=NULL, MISS=NULL, PVALUE=0.01))
 ```
 The arguments of the `$computeGRM` function are:
 
@@ -73,12 +74,12 @@ The arguments of the `$computeGRM` function are:
 
 Another GRM can be constructed with different parameters using the `makeGRM` function. For example:
 ```
-grm$computeGRM(name = "VR_filt", method="VanRaden", ep=0, snpsubset=NULL, filter=list(MAF=0.05, MISS=0.4, PVALUE=0.01))
+grm$computeGRM(name = "VR_filt", method="VanRaden", ep=0, snpsubset=NULL,
+               filter=list(MAF=0.05, MISS=0.4, PVALUE=0.01))
 ```
 
 A principal component analysis (PCA) plot of the GRM can be produced using the function `$plotPCA`:
 ```
-## PCA of the GRM constructed using the WG method
 grm$PCA(name = "VR_filt", colour=NULL, shape=NULL) 
 ```
 The arguments of the `$PCA` function are:
