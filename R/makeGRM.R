@@ -103,7 +103,7 @@ makeGRM <- function(RAobj, samfile, filter=list(MAF=NULL, MISS=NULL, BIN=100, MA
   if(all((names(saminfo) != "Ploidy")))
     stop("No column for ploidy values in sample file")
   # Ploidy values are valid?
-  if(GUSbase::checkVector(saminfo$Ploidy, type="pos_integer", minv=1))
+  if(any(sapply(saminfo$Ploidy, function(x) GUSbase::checkVector(x, type="pos_integer", minv=1))))
     stop("Ploidy values in sample file are invalid. These need to be non-missing positive integers")
   # Sample IDs in RA data?
   indIndex = saminfo$ID %in% RAobj$.__enclos_env__$private$indID
@@ -157,6 +157,8 @@ makeGRM <- function(RAobj, samfile, filter=list(MAF=NULL, MISS=NULL, BIN=100, MA
     oneSNP <- which(oneSNP)
   } else
     oneSNP <- which(rep(TRUE, length(chrom)))
+  
+  ## Update GRMobj
   GRMobj$.__enclos_env__$private$miss <- miss[indx[oneSNP]]
   GRMobj$.__enclos_env__$private$pfreq <- pfreq[indx[oneSNP]]
   GRMobj$.__enclos_env__$private$maf <- maf[indx[oneSNP]]
@@ -169,7 +171,7 @@ makeGRM <- function(RAobj, samfile, filter=list(MAF=NULL, MISS=NULL, BIN=100, MA
   GRMobj$.__enclos_env__$private$SNP_Names <- GRMobj$.__enclos_env__$private$SNP_Names[indx[oneSNP]]
   GRMobj$.__enclos_env__$private$nSnps <- length(indx[oneSNP])
   GRMobj$.__enclos_env__$private$filter <- filter
-  
+
   ## update summary information
   temp <- GRMobj$.__enclos_env__$private$ref + GRMobj$.__enclos_env__$private$alt
   summaryInfo = list(
@@ -183,6 +185,9 @@ makeGRM <- function(RAobj, samfile, filter=list(MAF=NULL, MISS=NULL, BIN=100, MA
     reads=paste0("  Reads:\t\t",sum(temp),"\n"))
   GRMobj$.__enclos_env__$private$summaryInfo = summaryInfo
 
+  ## Print summary information
+  GRMobj$print()
+  
   ## return the GRM object
   return(GRMobj)
 }

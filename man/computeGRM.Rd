@@ -16,8 +16,17 @@ computeGRM(
 )
 }
 \arguments{
-\item{method}{Character string specifying whether the VanRaden (\code{'VanRaden'}) based estimator or 
+\item{ploid}{A positive integer vector specifying the ploidy level of each individual. If only a single value is given,
+then the ploidy level is assumed equal in all the individuals.}
+
+\item{snpsubset}{}
+
+\item{method}{A character string specifying whether the VanRaden (\code{'VanRaden'}) based estimator or 
 the Weir-Goudet (\code{'WG'}) estimator is used to construct the GRM.}
+
+\item{ep}{}
+
+\item{name}{A character string giving the name of the GRM analysis}
 
 \item{filter}{Named list of thresholds for various filtering criteria.
 See below for details.}

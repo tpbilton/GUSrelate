@@ -1,6 +1,6 @@
 ##########################################################################
 # Genotyping Uncertainty with Sequencing data and RELATEdness (GUSrelate)
-# Copyright 2019-2021 Timothy P. Bilton
+# Copyright 2019-2023 Timothy P. Bilton
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -54,12 +54,12 @@ GRM <- R6::R6Class("GRM",
                        ########### Print function:
                        print = function(what = NULL, ...){
                          cat(unlist(private$summaryInfo))
-                         
+
                          if(!is.null(private$GRM)){
                            cat("GRMs in object:\n\n")
                            listOfGRM = names(private$GRM)
                            junk = sapply(listOfGRM, function(x) {
-                             cat(private$GRM[[x]]$sumInfo)
+                             cat(private$GRM[[x]]$sumInfo, sep="")
                              return(invisible())
                            })
                          }
@@ -88,12 +88,12 @@ GRM <- R6::R6Class("GRM",
                            subset[-snpsubset] <- FALSE
                          subset[which(private$maf < filter$MAF)] <- FALSE
                          subset[which(private$miss > filter$MISS)] <- FALSE
-                         
+
                          if(!is.null(private$pvalue))
                            subset[which(private$pvalue < filter$PVALUE)] <- FALSE
                          else
                            warning("Ignoring p-value filter as p-values from the Hardy-Weinberg equilibrium test have not been computed. Use the `$HWEtest` function to compute p-values")
-                    
+
                          ## compute the GRM
                          GRMmat <- GUSrelate::computeGRM(ref=private$ref, alt=private$alt, ploid=private$ploid, snpsubset=which(subset), method=method,
                                                phat=private$pfreq, ep=ep, ...)
@@ -101,10 +101,10 @@ GRM <- R6::R6Class("GRM",
                                          MISS=min(private$filter$MISS,filter$MISS),
                                          PVALUE=filter$PVALUE)
                          ## compute summary information:
-                         summaryInfo = c("Name: ", name, "\n  Number of individuals: ",nrow(GRMmat), "\n  Number of SNPs: ",sum(subset), 
-                                           "\n  Mean Depth: ", mean(private$ref[, which(subset)] + private$alt[, which(subset)]),
-                                           "\n  Mean Self-relatedness: ", mean(diag(GRMmat)),"\n  Filtering (retained SNPs):",
-                                           "\n    MAF: > ",fil_val$MAF, "\n    % Missing: <", fil_val$MISS*100, "%", 
+                         summaryInfo = c("Name: ", name, "\n  Number of individuals: ",nrow(GRMmat), "\n  Number of SNPs: ",sum(subset),
+                                           "\n  Mean Depth: ", round(mean(private$ref[, which(subset)] + private$alt[, which(subset)]),2),
+                                           "\n  Mean Self-relatedness: ", round(mean(diag(GRMmat)),2),"\n  Filtering (retained SNPs):",
+                                           "\n    MAF: > ",fil_val$MAF, "\n    % Missing: < ", fil_val$MISS*100, "%",
                                            "\n    p-value: > ", filter$PVALUE, "\n")
                          ## Same GRM and associated information to GRM object
                          GRMlist <- list(GRM=GRMmat, method=method, filter=fil_val, indID=private$indID, snpsubset=which(subset), ep=ep, freq=private$pfreq[snpsubset], sumInfo = summaryInfo)
@@ -152,18 +152,17 @@ GRM <- R6::R6Class("GRM",
                          stop("yet to be implemeted")
                        },
                        ############# Plots for the GRM
-                       PCA = function(name, npc=3, group1=NULL, group2=NULL, group.hover=NULL, interactive=FALSE){
-                         stop("yet to be implemented")
+                       PCA = function(name, npc=3, colour=NULL, shape=NULL, group.hover=NULL, interactive=FALSE){
                          if(!is.vector(name) || !is.character(name) || length(name) != 1)
                            stop("Argument 'name' needs to be a character vector of length 1.")
                          else if(!(name %in% names(private$GRM)))
                            stop("GRM not found. Check the name of the GRM group.")
-                         if(!is.null(group1) && (!is.vector(group1) || !is.character(group1) || length(group1) != 1 || !(group1 %in% names(private$ginfo))))
-                           stop("Information for 'group1' variable not found in the Sample information. Check the name of the sample information variable")
-                         if(!is.null(group2) && (!is.vector(group2) || !is.character(group2) || length(group2) != 1 || !(group2 %in% names(private$ginfo))))
-                           stop("Information for 'group1' variable not found in the Sample information. Check the name of the Sample information variable")
-                         if(!is.null(group.hover) && (!is.vector(group.hover) || !is.character(group.hover) || any(!(group.hover %in% names(private$ginfo)))))
-                           stop("Information for 'group1' variable not found in the Sample information. Check the name of the Sample information variable")
+                         if(!is.null(colour) && (!is.vector(colour) || !is.character(colour) || length(colour) != 1 || !(colour %in% colnames(private$samInfo))))
+                           stop("Information for 'colour' variable not found in the Sample information. Check the name of the sample information variable")
+                         if(!is.null(shape) && (!is.vector(shape) || !is.character(shape) || length(shape) != 1 || !(shape %in% names(private$samInfo))))
+                           stop("Information for 'shape' variable not found in the Sample information. Check the name of the Sample information variable")
+                         if(!is.null(group.hover) && (!is.vector(group.hover) || !is.character(group.hover) || any(!(group.hover %in% names(private$samInfo)))))
+                           stop("Information for 'group.hover' variable not found in the Sample information. Check the name of the Sample information variable")
                          GRMinfo <- private$GRM[[name]]
                          GRM <- GRMinfo$GRM
                          ## compte PCs components
@@ -171,35 +170,42 @@ GRM <- R6::R6Class("GRM",
                          eval <- sign(PC$d) * PC$d^2/sum(PC$d^2)
                          PC$x <- PC$u %*% diag(PC$d[1:npc],nrow=npc) # nrow to get correct behaviour when npc=1
                          ## Sort the groups
-                         if(!is.null(group1)) g1 <- private$ginfo[[group1]]
+                         if(!is.null(colour)) g1 <- private$samInfo[[colour]]
                          else g1 <- NULL
-                         if(!is.null(group2)) g2 <- private$ginfo[[group2]]
+                         if(!is.null(shape)) g2 <- private$samInfo[[shape]]
                          else g2 <- NULL
                          ## Produce the plots
+                         lab1 = paste0("Principal component 1 (",round(eval[1]*100,2),"%)")
+                         lab2 = paste0("Principal component 2 (",round(eval[2]*100,2),"%)")
                          if(interactive){
-                           if(!is.null(group.hover)) hover.info <- apply(sapply(group.hover,function(x) paste0(x,": ",private$ginfo[[x]]),simplify = TRUE),1,paste0,collapse="<br>")
+                           if(!is.null(group.hover)) hover.info <- apply(sapply(group.hover,function(x) paste0(x,": ",private$samInfo[[x]]),simplify = TRUE),1,paste0,collapse="<br>")
                            else hover.info <- NULL
                            temp_p <- plotly::plot_ly(y=PC$x[, 2],x=PC$x[, 1], type="scatter", mode="markers",
                                              hoverinfo="text", text=hover.info, width=640, height=640,
                                              marker=list(size=6), color=g1, symbol=g2) %>%
-                             plotly::layout(xaxis=list(title="Principal component 1",zeroline=FALSE), yaxis=list(title="Principal component 2",zeroline=FALSE))
+                             plotly::layout(xaxis=list(title=lab1,zeroline=FALSE), yaxis=list(title=lab2,zeroline=FALSE))
                            temp_p
                          } else{
                            df <- data.frame(x=PC$x[, 1], y=PC$x[, 2])
-                           ggplot2::ggplot(df, ggplot2::aes(x=x,y=y, col=g1, shape=g2)) + ggplot2::geom_point() + ggplot2::theme_bw() +
-                             ggplot2::ylab("Principal component 2") + ggplot2::xlab("Principal component 1")
+                           p = ggplot2::ggplot(df, ggplot2::aes(x=x,y=y, col=g1, shape=g2)) + ggplot2::geom_point() + ggplot2::theme_bw() +
+                             ggplot2::ylab(lab2) + ggplot2::xlab(lab1)
+                           if(!is.null(colour))
+                             p = p + guides(color=guide_legend(title=colour))
+                           if(!is.null(shape))
+                             p = p + guides(shape=guide_legend(title=shape))
+                           p
                          }
                        },
                        #### add group information
                        addSampleInfo = function(samfile){
                          if(!is.vector(samfile) || !is.character(samfile) || length(samfile) != 1)
-                           stop("Argument `saminfo` is invalid. Must be a character of length 1.")
+                           stop("Argument `samfile` is invalid. Must be a character of length 1.")
                          else if(!file.exists(samfile))
                            stop("File for sample information is not found")
-                         
+
                          ## read in the same information file:
                          saminfo = as.data.frame(data.table::fread(samfile, header=T))
-                         
+
                          # Checks on the sample file
                          if(all((names(saminfo) != "ID")))
                            stop("No column for sample IDs in sample file")
@@ -219,7 +225,7 @@ GRM <- R6::R6Class("GRM",
                          if(any(duplicated(saminfo$ID)))
                            stop(paste("Sample ID(s) duplicated in the sample information file:",
                                       paste(saminfo$ID[duplicated(saminfo$ID)], collapse = "\n  "), sep="\n  "))
-                         
+
                          ## Add sample information
                          private$samInfo = merge(private$samInfo, saminfo, by = "ID", sort=FALSE)
                          return(invisible(NULL))
@@ -234,8 +240,8 @@ GRM <- R6::R6Class("GRM",
                            stop("Cannot drop the 'ID' or 'Ploidy' columns")
                          private$samInfo = subset(private$samInfo, select = setdiff(colnames(private$samInfo), name))
                        },
-                       ########### Write GRM to file
-                       writeGRM = function(name, filename, IDvar=NULL){
+                       ########### Extract GRM to file
+                       extractGRM = function(name, IDvar=NULL){
                          if(!is.vector(name) || !is.character(name) || length(name) != 1)
                            stop("Argument 'name' needs to be a character vector of length 1.")
                          if(!(name %in% names(private$GRM)))
@@ -245,11 +251,28 @@ GRM <- R6::R6Class("GRM",
                          GRM <- private$GRM[[name]]$GRM
                          if(!is.null(IDvar)){
                            match.arg(IDvar, names(private$sam))
-                           colnames(GRM) <- rowname(GRM) <- private$samInfo[[IDvar]]
-                         } else colnames(GRM) <- rowname(GRM) <- private$indID
+                           colnames(GRM) <- rownames(GRM) <- private$samInfo[[IDvar]]
+                         } else colnames(GRM) <- rownames(GRM) <- private$indID
                          
                          ## write GRM to file
-                         write.csv(GRM, file = filename)
+                         return(GRM)
+                       },
+                       ########### Write GRM to file
+                       writeGRM = function(name, filename, IDvar=NULL){
+                         if(!is.vector(name) || !is.character(name) || length(name) != 1)
+                           stop("Argument 'name' needs to be a character vector of length 1.")
+                         if(!(name %in% names(private$GRM)))
+                           stop("Cannot find GRM. Chech the 'name' argument")
+
+                         ## extract GRM and put the specified IDs on rows and columns
+                         GRM <- private$GRM[[name]]$GRM
+                         if(!is.null(IDvar)){
+                           match.arg(IDvar, names(private$sam))
+                           colnames(GRM) <- rownames(GRM) <- private$samInfo[[IDvar]]
+                         } else colnames(GRM) <- rownames(GRM) <- private$indID
+
+                         ## write GRM to file
+                         data.table::fwrite(GRM, file = filename)
                        }
                      ),
                      private = list(

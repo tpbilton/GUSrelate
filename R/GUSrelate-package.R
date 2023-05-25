@@ -1,6 +1,6 @@
 ##########################################################################
 # Genotyping Uncertainty with Sequencing data and RELATEdness (GUSrelate)
-# Copyright 2019 Timothy P. Bilton <tbilton@maths.otago.ac.nz>
+# Copyright 2019-2023 Timothy P. Bilton
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,13 +22,13 @@
 #' via reference and alternate count information from sequence data.
 #'
 #' \tabular{ll}{ Package: \tab GUSrelate\cr Type: \tab Package\cr Version: \tab
-#' 0.2.0\cr Date: \tab 2019-12-03\cr License: \tab GPL-3\cr }
+#' 0.2.1\cr Date: \tab 2023-05-25\cr License: \tab GPL-3\cr }
 #'
 #' @name GUSbase-package
 #' @aliases GUSrelate
 #' @docType package
 #' @author Timothy P. Bilton, Maintainer: Timothy P. Bilton
-#' <tbilton@maths.otago.ac.nz>
+#' <timothy.bilton@agresearch.ac.nz>
 #' @references
 #' \insertAllCited{}
 #' @keywords package

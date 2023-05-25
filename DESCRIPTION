@@ -1,14 +1,14 @@
 Package: GUSrelate
 Title: Genotyping Uncertainty with Sequencing data and RELATEdness 
-Version: 0.2.0
-Date: 2019-12-03
+Version: 0.2.1
+Date: 2003-05-25
 Authors@R: person("Timothy P.", "Bilton", email = "tbilton@maths.otago.ac.nz", role = c("aut", "cre"))
 Maintainer: Timothy P. Bilton <tbilton@maths.otago.ac.nz>
 Description: Package for constructing genomic relationship matrices (GRMs) for autopolyploid species using high-throughput sequencing data.
-Depends: R (>= 3.3.0), GUSbase, plotly
+Depends: R (>= 3.3.0), GUSbase (>= 0.2.2), plotly
 Imports: R6, Rdpack, ggplot2
 RdMacros: Rdpack
 License: GPL-3 | file LICENSE
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.0.1
+RoxygenNote: 7.2.3

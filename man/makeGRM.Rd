@@ -2,54 +2,54 @@
 % Please edit documentation in R/makeGRM.R
 \name{makeGRM}
 \alias{makeGRM}
-\title{Make an genomic relationship matix (GRM) object}
+\title{Make an GRM object}
 \usage{
 makeGRM(
   RAobj,
-  name,
-  ploid = 2,
-  method = "VanRaden",
-  indsubset = NULL,
-  nThreads = 1,
-  ep = 0,
-  filter = list(MAF = NULL, MISS = NULL, PVALUE = NULL, MAXDEPTH = 500, BIN = 100),
-  est = list(MAF = TRUE, HWE = TRUE)
+  samfile,
+  filter = list(MAF = NULL, MISS = NULL, BIN = 100, MAXDEPTH = 500)
 )
 }
 \arguments{
 \item{RAobj}{Object of class RA created via the \code{\link[GUSbase]{readRA}} function.}
 
-\item{name}{Name of GRM matrix to be constructed.}
-
-\item{ploid}{Integer value giving the ploidy level of the individuals in the population.}
-
-\item{method}{Character string specifying whether the VanRaden (\code{'VanRaden'}) based estimator or 
-the Weir-Goudet (\code{'WG'}) estimator is used to construct the GRM.}
-
-\item{nThreads}{Integer vector specifying the number of threads to use in the OpenMP parallelization 
-used in the estimation of allele frequencies when \code{est=list(mafEst=TRUE)} of in the 
-estimation of the p-value from a HWE test when \code{est=list(HWE=TRUE)}}
-
-\item{ep}{}
+\item{samfile}{Character string giving the name of the file that contains the sample information of the population. 
+See below for details.}
 
 \item{filter}{Named list of thresholds for various filtering criteria.
 See below for details.}
 
-\item{est}{Named list specifying whether to estimate the minor frequency (\code{MAF=TRUE})
-or to compute the pvalue for the Hardy Weinberg equilibrium (\code{HWE=TRUE}) test 
-for each SNP using the method by \insertCite{li2011bioinform}{GUSrelate}}
+\item{method}{A character string specifying whether the VanRaden (\code{'VanRaden'}) based estimator or 
+the Weir-Goudet (\code{'WG'}) estimator is used to construct the GRM.}
 }
 \value{
 An R6 object of class GRM.
 }
 \description{
-Create a GRM object from an RA object, perform standard filtering and 
-compute statistics specific required for constructing GRMs.
+Create a genomic relationship matix (GRM) object from an RA object, perform standard filtering and 
+compute statistics required for constructing GRMs.
 }
 \details{
 This function converts an RA object into a GRM object. A GRM object is
-a R6 type obtain that contains RA data, various statistics related for 
+a R6 type object that contains RA data, various statistics related 
 to GRM analyses and functions (methods) for analysing GRMs.
+
+The sample information as specified in the \code{samfile} argument should be a csv file with the first column
+giving the ID of the sample (and must match the IDs in the RA object supplied in the \code{RAobj} argument) and
+the second column giving the ploidy level of each individual. Additional columns can then be added to the that
+gives more information about the sample (e.g., cultivar, location, population). For example,
+\tabular{lll}{
+ID \tab Ploidy \tab Group \cr
+HE109 \tab 2 \tab Wild \cr
+PE202 \tab 4 \tab Wild \cr
+PE243 \tab 4 \tab Domesticated   
+}
+In this example, there are three individuals, the first (HE109) is a diploid and belongs to the Wild group,
+the second individual (PE202) is a tetraploid that also belongs to the Wild group and the third individual
+(PE243) is also a tetraploid but belongs to the Domesticated group. 
+Note that the names for the first two columns must be "ID" and "Ploid" respectively, but any names can
+be used for the remaining columns but it is recommended meaning name without spaced. Remeber that the first
+two are required, any extra columns are optional but can be used later. 
 
 The filtering criteria currently implemented are:
 \iterize{
@@ -58,15 +58,10 @@ The filtering criteria currently implemented are:
  is greater than the threshold value (default is \code{NULL}).}
 \item{Bin size for SNP selection (\code{BIN}): }{SNPs are binned together if the distance (in base pairs) between them is less than the threshold value (default is 100).
 One SNP is then randomly selected from each bin and retained for final analysis. This filtering is to ensure that there is only one SNP on each sequence read.}
-\item{Hardy Weinberg equilibrium (HWE) test P-value (\code{PVALUE}): }{SNPs are discarded if the p-value from a HWE test is smaller than the threshold (default is \code{NULL}).
- This filters out SNPs where the segregation type has been inferred wrong.}
-\item{Maximum averge SNP depth (\code{MAXDEPTH}}{SNPs with an average read depth above the threshold value are discarded (default is 500).}
+\item{Maximum averge SNP depth (\code{MAXDEPTH}): }{SNPs with an average read depth above the threshold value are discarded (default is 500).}
 }
 If a filtering criteria is set to \code{NULL}, then no filtering in regard to
 that threshold is applied.
-}
-\references{
-\insertRef{li2011bioinform}{GUSrelate}
 }
 \author{
 Timothy P. Bilton

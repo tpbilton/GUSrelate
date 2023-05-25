@@ -47,7 +47,7 @@ computeGRM <- function(ref, alt, ploid, snpsubset=NULL, method="VanRaden", phat,
   }
   if(length(ploid) == 1)
     ploid = rep(ploid, nInd)
-  else if(GUSbase::checkVector(ploid, type = "pos_integer", minv=1) || length(ploid) != nInd)
+  else if(any(sapply(ploid, function(x) GUSbase::checkVector(x, type="pos_integer", minv=1))) || length(ploid) != nInd)
     stop("Input vector ploidy level is invalid.")
   
   depth <- ref + alt
