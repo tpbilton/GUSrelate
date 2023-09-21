@@ -250,7 +250,7 @@ GRM <- R6::R6Class("GRM",
                          ## extract GRM and put the specified IDs on rows and columns
                          GRM <- private$GRM[[name]]$GRM
                          if(!is.null(IDvar)){
-                           match.arg(IDvar, names(private$sam))
+                           match.arg(IDvar, names(private$samInfo))
                            colnames(GRM) <- rownames(GRM) <- private$samInfo[[IDvar]]
                          } else colnames(GRM) <- rownames(GRM) <- private$indID
                          
