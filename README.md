@@ -8,7 +8,7 @@ An R package for constructing genomic relationship matrices (GRMs) for autopolyp
 
 ### Installation:
 
-The easiest way to install GUSMap in R is using the devtools package.
+The easiest way to install GUSrelate in R is using the devtools package.
 
 ```
 install.packages("devtools")
