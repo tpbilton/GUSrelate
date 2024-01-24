@@ -122,8 +122,11 @@ where the arguments are:
 Although not described in Bilton et al. (2024), GUSrelate allows input of SNP and individual specific error values if available. For example:
 ```
 ## Generate matrix of error parameters (random)
-## Note: would not recommend this in practice. Use either information in the VCF or some otehr software to estimate the error parameter.
-ep_mat = plogis(rnorm(n = prod(unlist(grm$extractVar(c("nSnps","nInd")))), mean = -10))
+## Note: would not recommend this in practice. Use either information in the VCF 
+## or some otehr software to estimate the error parameter.
+nSnps = grm$extractVar("nSnps")$nSnps
+nInd = grm$extractVar("nInd")$nInd
+ep_mat = matrix(plogis(rnorm(n = nSnps*nInd, mean = -10)), nrow=nInd, ncol=nSnps)
 
 ## Using the matrix of SNP and individual specific error parameters
 grm$computeGRM(name = "VR_filt", method="VanRaden", ep=ep_mat, snpsubset=NULL,
