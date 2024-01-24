@@ -22,11 +22,10 @@
 #' via reference and alternate count information from sequence data.
 #'
 #' \tabular{ll}{ Package: \tab GUSrelate\cr Type: \tab Package\cr Version: \tab
-#' 0.2.1\cr Date: \tab 2023-05-25\cr License: \tab GPL-3\cr }
+#' 0.2.2\cr Date: \tab 2024-01-24\cr License: \tab GPL-3\cr }
 #'
 #' @name GUSbase-package
 #' @aliases GUSrelate
-#' @docType package
 #' @author Timothy P. Bilton, Maintainer: Timothy P. Bilton
 #' <timothy.bilton@agresearch.ac.nz>
 #' @references
@@ -34,7 +33,6 @@
 #' @keywords package
 #' @importFrom Rdpack reprompt
 #' @importFrom R6 R6Class
-NULL
-
+"_PACKAGE"
 
 

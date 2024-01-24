@@ -20,12 +20,27 @@ Note: Some of the functions are coded in C and therefore an appropriate C compil
 
 ### Example:
 
-We give a simple example to illustrate how to use GUSrelate using the simulated dataset 
-found in the `GUSbase` package. The data can be loaded and an RA object created using the following code
+We give a simple example to illustrate how to use GUSrelate using the simulated dataset found in the `GUSbase` package. There are two ways to load data into GUSrelate:
+
+1. From a VCF file: The data can be loaded and an RA object created using the following code
 ```
 library(GUSrelate)
 ra <- VCFtoRA(simDS()$vcf)
 radata <- readRA(ra)
+```
+
+2. From count matrices of reference and alternate allele counts: This requires loading the data into R and creating a RA object as follows:
+```
+library(GUSrelate)
+## matrices of simulated data saved in Rdata file within package
+datloc = system.file("extdata", "simdata.Rdata", package = "GUSbase")
+load(datloc)
+
+## Check that the objects ref, alt, chrom, pos and indID have been loaded.
+ls()
+
+## Create RA object
+radata <- makeRA(ref=ref, alt=alt, chrom=chrom, pos=pos, indID=indID)
 ```
 
 The next step is to create a metadata file containing ploidy information of each sample (in case the ploidy level is not consistent in the population) and any other phenotype/grouping information that might be used later to explore the GRM. An example file is provide within the `GUSbase` package and the file location can be obtained using
@@ -102,9 +117,30 @@ where the arguments are:
 * `filename`: The name of the file including the file extension (writes to csv format).
 * `IDvar`: Which column in the file supplied to the `samfile` argument in the `makeGRM` function to use as IDs for the rows/columns of the GRM.
 
+#### Note:
+
+Although not described in Bilton et al. (2024), GUSrelate allows input of SNP and individual specific error values if available. For example:
+```
+## Generate matrix of error parameters (random)
+## Note: would not recommend this in practice. Use either information in the VCF or some otehr software to estimate the error parameter.
+ep_mat = plogis(rnorm(n = prod(unlist(grm$extractVar(c("nSnps","nInd")))), mean = -10))
+
+## Using the matrix of SNP and individual specific error parameters
+grm$computeGRM(name = "VR_filt", method="VanRaden", ep=ep_mat, snpsubset=NULL,
+               filter=list(MAF=0.05, MISS=0.4, PVALUE=0.01))
+```
+
 ### Future development:
 
 This package is still under development and additional methods and functions for analyzing GRMs is intended to be added at a later date.
 
+### Citation:
+
+To cite this R package:
+
+Bilton, T.P., Sharma, S.K., Schofield, M.R., Black, M.A., Jacobs, J.M.E., Bryan, G.J. \& Dodds, K.G. (2024). Construction of relatedness matrices in autopolyploid populations using low depth high-throughput sequencing data. Unpublished Manuscript
+
 ### Funding:
 The initial development of this package was partially funded by the Ministry of Business, Innovation and Employment via its funding of the “Genomics for Production & Security in a Biological Economy” programme (Contract ID C10X1306).
+
+
