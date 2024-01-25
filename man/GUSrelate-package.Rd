@@ -3,6 +3,7 @@
 \docType{package}
 \name{GUSrelate-package}
 \alias{GUSrelate-package}
+\alias{_PACKAGE}
 \alias{GUSrelate}
 \title{Genotyping Uncertainty with Sequencing data and RELATEdness (GUSrelate)}
 \description{

@@ -163,15 +163,15 @@ Excluded SNPs are given a p-value of 0.}
 
 \item{\code{nThreads}}{Integer value specifying the number of threads to use in the parallelization.}
 
-\item{\code{para}}{Starting values passed to the \code{\link[GUSbase]{p_est_em}} and \code{\link[GUSbase]{g_est_em}} functions.}
+\item{\code{para}}{Starting values passed to the \code{p_est_em} and \code{g_est_em} functions.}
 
-\item{\code{EMpara}}{Convergence criteria passed to the \code{\link[GUSbase]{p_est_em}} and \code{\link[GUSbase]{g_est_em}} functions.}
+\item{\code{EMpara}}{Convergence criteria passed to the \code{p_est_em} and \code{g_est_em} functions.}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
-The function calls the \code{\link[GUSbase]{p_est_em}} and \code{\link[GUSbase]{g_est_em}} functions in the 
-\code{\link[GUSbase]{GUSbase}} package to perform the HWE test.
+The function calls the \code{p_est_em} and \code{g_est_em} functions in the 
+\code{GUSbase} package to perform the HWE test.
 }
 
 }

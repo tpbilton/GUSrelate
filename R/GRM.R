@@ -130,7 +130,7 @@ GRM <- R6::R6Class("GRM",
                            warning("Ignoring p-value filter as p-values from the Hardy-Weinberg equilibrium test have not been computed. Use the `$HWEtest` function to compute p-values")
 
                          ## compute the GRM
-                         GRMmat <- GUSrelate::computeGRM(ref=private$ref, alt=private$alt, ploid=private$ploid, snpsubset=which(subset), method=method,
+                         GRMmat <- computeGRM(ref=private$ref, alt=private$alt, ploid=private$ploid, snpsubset=which(subset), method=method,
                                                phat=private$pfreq, ep=ep, ...)
                          fil_val <- list(MAF=max(private$filter$MAF,filter$MAF),
                                          MISS=min(private$filter$MISS,filter$MISS),
@@ -153,15 +153,15 @@ GRM <- R6::R6Class("GRM",
 		                   #' Perform a Hardy–Weinberg Equilibrium (HWE) test for autopolyploids.
 		                   #' 
 		                   #' @details 
-		                   #' The function calls the \code{\link[GUSbase]{p_est_em}} and \code{\link[GUSbase]{g_est_em}} functions in the 
-		                   #' \code{\link[GUSbase]{GUSbase}} package to perform the HWE test. 
+		                   #' The function calls the \code{p_est_em} and \code{g_est_em} functions in the 
+		                   #' \code{GUSbase} package to perform the HWE test. 
 		                   #' 
 		                   #' @param snpsubset Vector of SNP indices indicating which SNPs to do the HWE test on.
 		                   #' Excluded SNPs are given a p-value of 0.
 		                   #' @param indsubset Vector of indices of the samples indicating which samples to use in the HWE test.
 		                   #' @param nThreads Integer value specifying the number of threads to use in the parallelization.
-		                   #' @param para Starting values passed to the \code{\link[GUSbase]{p_est_em}} and \code{\link[GUSbase]{g_est_em}} functions.
-		                   #' @param EMpara Convergence criteria passed to the \code{\link[GUSbase]{p_est_em}} and \code{\link[GUSbase]{g_est_em}} functions.
+		                   #' @param para Starting values passed to the \code{p_est_em} and \code{g_est_em} functions.
+		                   #' @param EMpara Convergence criteria passed to the \code{p_est_em} and \code{g_est_em} functions.
 		                   #' 
                        HWEtest = function(snpsubset=NULL, indsubset=NULL, nThreads=1, para=NULL, EMpara=NULL){
                          if(is.null(indsubset)) indsubset = 1:private$nInd
@@ -377,7 +377,7 @@ GRM <- R6::R6Class("GRM",
                          } else colnames(GRM) <- rownames(GRM) <- private$indID
 
                          ## write GRM to file
-                         data.table::fwrite(GRM, file = filename)
+                         data.table::fwrite(GRM, file = filename, row.names=TRUE)
                        }
                      ),
                      private = list(
