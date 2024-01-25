@@ -3,9 +3,6 @@
 \name{GRM}
 \alias{GRM}
 \title{GRM object}
-\usage{
-GRMobj <- makeGRM()
-}
 \description{
 Class for storing RA data and associated functions for analyzing unstructured populations (e.g.,
 populations with no known structure).
@@ -77,6 +74,7 @@ Timothy P. Bilton
 \if{html}{\out{<a id="method-GRM-computeGRM"></a>}}
 \if{latex}{\out{\hypertarget{method-GRM-computeGRM}{}}}
 \subsection{Method \code{computeGRM()}}{
+Construct a Genomic relationship matrix (GRM)
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{GRM$computeGRM(
   name,
@@ -88,6 +86,22 @@ Timothy P. Bilton
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{name}}{Specific name given to the run constructing the GRM.}
+
+\item{\code{method}}{Character value indicating which method to used to contruct the GRM.}
+
+\item{\code{ep}}{Sequencing error rate. Can be a single value, a vector equal to the number of SNPs
+or a matrix the same dimension as the data}
+
+\item{\code{snpsubset}}{Vector of indices indicated which SNPs to retain to contruct the GRM.}
+
+\item{\code{filter}}{Name list specifying the filtering criteria to be applied.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-GRM-HWEtest"></a>}}

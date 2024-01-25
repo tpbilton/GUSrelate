@@ -16,23 +16,19 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #########################################################################
 
-#' GRM object
-#'
+#' @title GRM object
+#' 
+#' @description
 #' Class for storing RA data and associated functions for analyzing unstructured populations (e.g.,
 #' populations with no known structure).
-#'
+#' 
+#' @details  
 #' A genomic relationship matrix (GRM) object is created from the \code{\link{makeGRM}} function and contains RA data,
 #' various statistics of the dataset that have been computed, and functions (or methods)
 #' for analyzing the data. Information in an GRM are specific to constructing a GRM
-#' @usage
-#' GRMobj <- makeGRM()
-#' @format NULL
+#'
 #' @author Timothy P. Bilton
 #' @seealso \code{\link{makeGRM}}
-#' @name GRM
-#' @export
-### R6 class for creating a data format for genomic relationship matrices
-
 GRM <- R6::R6Class("GRM",
                      inherit = GUSbase::RA,
                      public = list(
@@ -65,6 +61,15 @@ GRM <- R6::R6Class("GRM",
                          }
                        },
                        ########### Function to construct a genomic relationship matrix (GRM)
+		       #' @description
+		       #' Construct a Genomic relationship matrix (GRM)
+		       #' 
+		       #' @param name Specific name given to the run constructing the GRM.
+		       #' @param method Character value indicating which method to used to contruct the GRM.
+		       #' @param ep Sequencing error rate. Can be a single value, a vector equal to the number of SNPs
+		       #' or a matrix the same dimension as the data
+		       #' @param snpsubset Vector of indices indicated which SNPs to retain to contruct the GRM.
+		       #' @param filter Name list specifying the filtering criteria to be applied.
                        computeGRM = function(name, method="VanRaden", ep=0, snpsubset=NULL, filter=list(MAF=NULL, MISS=NULL, PVALUE=NULL),...){
                          ## do some checks
                          if(!is.vector(name) || !is.character(name) || length(name) != 1)
