@@ -171,7 +171,7 @@ Excluded SNPs are given a p-value of 0.}
 }
 \subsection{Details}{
 The function calls the \code{\link[GUSbase]{p_est_em}} and \code{\link[GUSbase]{g_est_em}} functions in the 
-\code{\link[GUSbase]} package to perform the HWE test.
+\code{\link[GUSbase]{GUSbase}} package to perform the HWE test.
 }
 
 }

@@ -154,7 +154,7 @@ GRM <- R6::R6Class("GRM",
 		                   #' 
 		                   #' @details 
 		                   #' The function calls the \code{\link[GUSbase]{p_est_em}} and \code{\link[GUSbase]{g_est_em}} functions in the 
-		                   #' \code{\link[GUSbase]} package to perform the HWE test. 
+		                   #' \code{\link[GUSbase]{GUSbase}} package to perform the HWE test. 
 		                   #' 
 		                   #' @param snpsubset Vector of SNP indices indicating which SNPs to do the HWE test on.
 		                   #' Excluded SNPs are given a p-value of 0.
