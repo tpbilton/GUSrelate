@@ -10,7 +10,7 @@ populations with no known structure).
 \details{
 A genomic relationship matrix (GRM) object is created from the \code{\link{makeGRM}} function and contains RA data,
 various statistics of the dataset that have been computed, and functions (or methods)
-for analyzing the data. Information in an GRM are specific to constructing a GRM
+for analyzing the data. Information in a GRM object are specific to constructing a genomic relationship matrix
 }
 \seealso{
 \code{\link{makeGRM}}
@@ -29,8 +29,6 @@ Timothy P. Bilton
 \item \href{#method-GRM-computeGRM}{\code{GRM$computeGRM()}}
 \item \href{#method-GRM-HWEtest}{\code{GRM$HWEtest()}}
 \item \href{#method-GRM-removeGRM}{\code{GRM$removeGRM()}}
-\item \href{#method-GRM-plotGRM}{\code{GRM$plotGRM()}}
-\item \href{#method-GRM-CompareGRM}{\code{GRM$CompareGRM()}}
 \item \href{#method-GRM-PCA}{\code{GRM$PCA()}}
 \item \href{#method-GRM-addSampleInfo}{\code{GRM$addSampleInfo()}}
 \item \href{#method-GRM-removeSampleInfo}{\code{GRM$removeSampleInfo()}}
@@ -56,17 +54,37 @@ Timothy P. Bilton
 \if{html}{\out{<a id="method-GRM-new"></a>}}
 \if{latex}{\out{\hypertarget{method-GRM-new}{}}}
 \subsection{Method \code{new()}}{
+Method for initializing GRM object.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{GRM$new(GRMobj, ploid, indsubset, saminfo)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{GRM$new(RAobj, ploid, indsubset, saminfo)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{RAobj}}{Existing RA object to use in initializing the GRM object.}
+
+\item{\code{ploid}}{Vector of integer values indicating the ploid levels of each individual.}
+
+\item{\code{indsubset}}{Vector of indices specifying which individuals from the RA object to retain.}
+
+\item{\code{saminfo}}{Data frame of sample information.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-GRM-print"></a>}}
 \if{latex}{\out{\hypertarget{method-GRM-print}{}}}
 \subsection{Method \code{print()}}{
+Print output from a GRM object
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{GRM$print(what = NULL, ...)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{GRM$print()}\if{html}{\out{</div>}}
+}
+
+\subsection{Details}{
+Prints the summary information of the dataset and if any GRMs have been constructed, it 
+also prints out summary information of the GRM runs.
 }
 
 }
@@ -74,7 +92,7 @@ Timothy P. Bilton
 \if{html}{\out{<a id="method-GRM-computeGRM"></a>}}
 \if{latex}{\out{\hypertarget{method-GRM-computeGRM}{}}}
 \subsection{Method \code{computeGRM()}}{
-Construct a Genomic relationship matrix (GRM)
+Construct a genomic relationship matrix (GRM)
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{GRM$computeGRM(
   name,
@@ -91,22 +109,40 @@ Construct a Genomic relationship matrix (GRM)
 \describe{
 \item{\code{name}}{Specific name given to the run constructing the GRM.}
 
-\item{\code{method}}{Character value indicating which method to used to contruct the GRM.}
+\item{\code{method}}{Character value indicating which method to used to construct the GRM.}
 
 \item{\code{ep}}{Sequencing error rate. Can be a single value, a vector equal to the number of SNPs
 or a matrix the same dimension as the data}
 
-\item{\code{snpsubset}}{Vector of indices indicated which SNPs to retain to contruct the GRM.}
+\item{\code{snpsubset}}{Vector of indices indicated which SNPs to retain to construct the GRM.}
 
 \item{\code{filter}}{Name list specifying the filtering criteria to be applied.}
+
+\item{\code{...}}{Not used currently.}
 }
 \if{html}{\out{</div>}}
 }
+\subsection{Details}{
+The filtering criteria currently implemented are:
+\itemize{
+\item{Minor allele frequency (\code{MAF}): }{SNPs are discarded if their MAF is less than the threshold (default is \code{NULL})}
+\item{Proportion of missing data (\code{MISS}): }{SNPs are discarded if the proportion of individuals with no reads (e.g. missing genotype)
+ is greater than the threshold value (default is \code{NULL}).}
+\item{P-value from a HWE test(\code{PVALUE}):}{ SNPs are discarded if the p-value from the Hardy-Weinberg equilibrium test is less than
+the threshold. (default is \code{NULL})}
+}
+If a filtering criteria is set to \code{NULL}, then no filtering in regard to
+that threshold is applied.
+
+Not that for the \code{PVALUE} filter, the HWE test must first be run using the \code{$HWEtest} method.
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-GRM-HWEtest"></a>}}
 \if{latex}{\out{\hypertarget{method-GRM-HWEtest}{}}}
 \subsection{Method \code{HWEtest()}}{
+Perform a Hardy–Weinberg Equilibrium (HWE) test for autopolyploids.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{GRM$HWEtest(
   snpsubset = NULL,
@@ -117,43 +153,50 @@ or a matrix the same dimension as the data}
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{snpsubset}}{Vector of SNP indices indicating which SNPs to do the HWE test on.
+Excluded SNPs are given a p-value of 0.}
+
+\item{\code{indsubset}}{Vector of indices of the samples indicating which samples to use in the HWE test.}
+
+\item{\code{nThreads}}{Integer value specifying the number of threads to use in the parallelization.}
+
+\item{\code{para}}{Starting values passed to the \code{\link[GUSbase]{p_est_em}} and \code{\link[GUSbase]{g_est_em}} functions.}
+
+\item{\code{EMpara}}{Convergence criteria passed to the \code{\link[GUSbase]{p_est_em}} and \code{\link[GUSbase]{g_est_em}} functions.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Details}{
+The function calls the \code{\link[GUSbase]{p_est_em}} and \code{\link[GUSbase]{g_est_em}} functions in the 
+\code{\link[GUSbase]} package to perform the HWE test.
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-GRM-removeGRM"></a>}}
 \if{latex}{\out{\hypertarget{method-GRM-removeGRM}{}}}
 \subsection{Method \code{removeGRM()}}{
+Delete a GRM run within the GRM object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{GRM$removeGRM(name)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{name}}{Name of the GRM run to delete.}
 }
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-GRM-plotGRM"></a>}}
-\if{latex}{\out{\hypertarget{method-GRM-plotGRM}{}}}
-\subsection{Method \code{plotGRM()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{GRM$plotGRM(
-  type = c("histrogram", "scatter"),
-  values = c("both", "self-relatedness", "relatednes"),
-  xaxis = NULL,
-  interactive = FALSE
-)}\if{html}{\out{</div>}}
+\if{html}{\out{</div>}}
 }
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-GRM-CompareGRM"></a>}}
-\if{latex}{\out{\hypertarget{method-GRM-CompareGRM}{}}}
-\subsection{Method \code{CompareGRM()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{GRM$CompareGRM()}\if{html}{\out{</div>}}
-}
-
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-GRM-PCA"></a>}}
 \if{latex}{\out{\hypertarget{method-GRM-PCA}{}}}
 \subsection{Method \code{PCA()}}{
+Produce a PCA plot of a constructed GRM
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{GRM$PCA(
   name,
@@ -165,13 +208,53 @@ or a matrix the same dimension as the data}
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{name}}{Character value giving the name of the GRM run to extract the constructed GRM from.}
+
+\item{\code{npc}}{Integer number specifying the number of PCs to plot}
+
+\item{\code{colour}}{Character string specifying which column of the sample information to use to colour the points}
+
+\item{\code{shape}}{Character string specifying which column of the sample information to use to group the points based on point shape}
+
+\item{\code{group.hover}}{Character vector specifying which column(s) of the sample information to include in the hover information for the
+interactive plots. Only used if \code{interactive=TRUE}.}
+
+\item{\code{interactive}}{Logical value: If \code{TRUE}, then an interactive plot using the \code{plotly} package is produced.
+Otherwise, a standard \code{ggplot} is constructed.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Details}{
+The sample information used by this function is the information added by the `$addSampleInfo` method.
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-GRM-addSampleInfo"></a>}}
 \if{latex}{\out{\hypertarget{method-GRM-addSampleInfo}{}}}
 \subsection{Method \code{addSampleInfo()}}{
+Add sample information to the GRM object
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{GRM$addSampleInfo(samfile)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{samfile}}{Path to the file that contains the sample information to be loaded to GRM object.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Details}{
+The sample information must contain a column 'ID' that has the ID of the samples and must match
+the IDs of the samples already in the GRM object. Any extra columns will be added to the existing 
+sample information data.
+
+Note that a column named 'Ploidy' can not be present in the file. If there are any columns already present
+then the function throw and error.
 }
 
 }
@@ -179,8 +262,20 @@ or a matrix the same dimension as the data}
 \if{html}{\out{<a id="method-GRM-removeSampleInfo"></a>}}
 \if{latex}{\out{\hypertarget{method-GRM-removeSampleInfo}{}}}
 \subsection{Method \code{removeSampleInfo()}}{
+Remove sample information from a GRM object
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{GRM$removeSampleInfo(name)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{name}}{Character vector of column names to remove from the sample information data.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Details}{
+Note that columns 'ID' and 'Ploidy' cannot be deleted.
 }
 
 }
@@ -188,17 +283,45 @@ or a matrix the same dimension as the data}
 \if{html}{\out{<a id="method-GRM-extractGRM"></a>}}
 \if{latex}{\out{\hypertarget{method-GRM-extractGRM}{}}}
 \subsection{Method \code{extractGRM()}}{
+Extract a GRM from a run.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{GRM$extractGRM(name, IDvar = NULL)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{name}}{Character value specifying which run to extract the GRM from.}
+
+\item{\code{IDvar}}{Character value specifying which column of the sample information to use for 
+IDs in the GRM matrix. If \code{IDvar=NULL}, then the 'ID' column is used.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-GRM-writeGRM"></a>}}
 \if{latex}{\out{\hypertarget{method-GRM-writeGRM}{}}}
 \subsection{Method \code{writeGRM()}}{
+Write GRM to file.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{GRM$writeGRM(name, filename, IDvar = NULL)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{name}}{Character value specifying which run to write the GRM from.}
+
+\item{\code{filename}}{Character value giving the name of the output file.}
+
+\item{\code{IDvar}}{Character value specifying which column of the sample information to use for 
+IDs in the GRM matrix. If \code{IDvar=NULL}, then the 'ID' column is used.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Details}{
+The file format is currently a symmetric matrix with the IDs on the rows and columns.
 }
 
 }

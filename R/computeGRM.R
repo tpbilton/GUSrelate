@@ -16,7 +16,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #########################################################################
 
-
 computeGRM <- function(ref, alt, ploid, snpsubset=NULL, method="VanRaden", phat, ep=0, ...){
 
   if(!exists("thres")) thres = 0.001

@@ -1,6 +1,6 @@
 ##########################################################################
 # Genotyping Uncertainty with Sequencing data and RELATEdness (GUSrelate)
-# Copyright 2019-2023 Timothy P. Bilton
+# Copyright 2019-2024 Timothy P. Bilton
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,30 +25,45 @@
 #' @details  
 #' A genomic relationship matrix (GRM) object is created from the \code{\link{makeGRM}} function and contains RA data,
 #' various statistics of the dataset that have been computed, and functions (or methods)
-#' for analyzing the data. Information in an GRM are specific to constructing a GRM
+#' for analyzing the data. Information in a GRM object are specific to constructing a genomic relationship matrix
 #'
 #' @author Timothy P. Bilton
 #' @seealso \code{\link{makeGRM}}
 GRM <- R6::R6Class("GRM",
                      inherit = GUSbase::RA,
                      public = list(
-                       initialize = function(GRMobj, ploid, indsubset, saminfo){
-                         private$ref       <- GRMobj$.__enclos_env__$private$ref[indsubset,]
-                         private$alt       <- GRMobj$.__enclos_env__$private$alt[indsubset,]
-                         private$chrom     <- GRMobj$.__enclos_env__$private$chrom
-                         private$pos       <- GRMobj$.__enclos_env__$private$pos
-                         private$SNP_Names <- GRMobj$.__enclos_env__$private$SNP_Names
-                         private$indID     <- GRMobj$.__enclos_env__$private$indID[indsubset]
-                         private$nSnps     <- GRMobj$.__enclos_env__$private$nSnps
+                       #' @description
+                       #' Method for initializing GRM object.
+                       #' 
+                       #' @param RAobj Existing RA object to use in initializing the GRM object.
+                       #' @param ploid Vector of integer values indicating the ploid levels of each individual.
+                       #' @param indsubset Vector of indices specifying which individuals from the RA object to retain.
+                       #' @param saminfo Data frame of sample information.
+                       #'
+                       initialize = function(RAobj, ploid, indsubset, saminfo){
+                         private$ref       <- RAobj$.__enclos_env__$private$ref[indsubset,]
+                         private$alt       <- RAobj$.__enclos_env__$private$alt[indsubset,]
+                         private$chrom     <- RAobj$.__enclos_env__$private$chrom
+                         private$pos       <- RAobj$.__enclos_env__$private$pos
+                         private$SNP_Names <- RAobj$.__enclos_env__$private$SNP_Names
+                         private$indID     <- RAobj$.__enclos_env__$private$indID[indsubset]
+                         private$nSnps     <- RAobj$.__enclos_env__$private$nSnps
                          private$nInd      <- length(indsubset)
-                         private$gform     <- GRMobj$.__enclos_env__$private$gform
-                         private$AFrq      <- GRMobj$.__enclos_env__$private$AFrq
-                         private$infilename<- GRMobj$.__enclos_env__$private$infilename
+                         private$gform     <- RAobj$.__enclos_env__$private$gform
+                         private$AFrq      <- RAobj$.__enclos_env__$private$AFrq
+                         private$infilename<- RAobj$.__enclos_env__$private$infilename
                          private$ploid     <- as.integer(ploid)
                          private$samInfo   <- saminfo
                        },
                        ########### Print function:
-                       print = function(what = NULL, ...){
+                       #' @description
+                       #' Print output from a GRM object
+                       #' 
+                       #' @details 
+                       #' Prints the summary information of the dataset and if any GRMs have been constructed, it 
+                       #' also prints out summary information of the GRM runs.
+                       #' 
+                       print = function(){
                          cat(unlist(private$summaryInfo))
 
                          if(!is.null(private$GRM)){
@@ -61,16 +76,31 @@ GRM <- R6::R6Class("GRM",
                          }
                        },
                        ########### Function to construct a genomic relationship matrix (GRM)
-		       #' @description
-		       #' Construct a Genomic relationship matrix (GRM)
-		       #' 
-		       #' @param name Specific name given to the run constructing the GRM.
-		       #' @param method Character value indicating which method to used to contruct the GRM.
-		       #' @param ep Sequencing error rate. Can be a single value, a vector equal to the number of SNPs
-		       #' or a matrix the same dimension as the data
-		       #' @param snpsubset Vector of indices indicated which SNPs to retain to contruct the GRM.
-		       #' @param filter Name list specifying the filtering criteria to be applied.
-                       computeGRM = function(name, method="VanRaden", ep=0, snpsubset=NULL, filter=list(MAF=NULL, MISS=NULL, PVALUE=NULL),...){
+		                   #' @description
+		                   #' Construct a genomic relationship matrix (GRM)
+		                   #' 
+		                   #' @details 
+		                   #' The filtering criteria currently implemented are:
+		                   #' \itemize{
+		                   #' \item{Minor allele frequency (\code{MAF}): }{SNPs are discarded if their MAF is less than the threshold (default is \code{NULL})}
+		                   #' \item{Proportion of missing data (\code{MISS}): }{SNPs are discarded if the proportion of individuals with no reads (e.g. missing genotype)
+		                   #'  is greater than the threshold value (default is \code{NULL}).}
+		                   #' \item{P-value from a HWE test(\code{PVALUE}):}{ SNPs are discarded if the p-value from the Hardy-Weinberg equilibrium test is less than
+		                   #' the threshold. (default is \code{NULL})}
+		                   #' }
+		                   #' If a filtering criteria is set to \code{NULL}, then no filtering in regard to
+		                   #' that threshold is applied.
+		                   #' 
+		                   #' Not that for the \code{PVALUE} filter, the HWE test must first be run using the \code{$HWEtest} method.
+		                   #' 
+		                   #' @param name Specific name given to the run constructing the GRM.
+		                   #' @param method Character value indicating which method to used to construct the GRM.
+		                   #' @param ep Sequencing error rate. Can be a single value, a vector equal to the number of SNPs
+		                   #' or a matrix the same dimension as the data
+		                   #' @param snpsubset Vector of indices indicated which SNPs to retain to construct the GRM.
+		                   #' @param filter Name list specifying the filtering criteria to be applied.
+		                   #' @param ... Not used currently.
+		                   computeGRM = function(name, method="VanRaden", ep=0, snpsubset=NULL, filter=list(MAF=NULL, MISS=NULL, PVALUE=NULL),...){
                          ## do some checks
                          if(!is.vector(name) || !is.character(name) || length(name) != 1)
                            stop("Argument 'name' needs to be a character vector of length 1.")
@@ -119,11 +149,20 @@ GRM <- R6::R6Class("GRM",
                          cat("GRM computed:\n", summaryInfo, sep="")
                          return(invisible(NULL))
                        },
-                       #p_est = function(snpsubset=NULL, indsubset=NULL, nThreads=1, para=NULL, EMpara=NULL){
-                       #   temp <- GUSbase::p_est_em(private$ref, private$alt, private$ploid, snpsubset=snpsubset,
-                       #                                      indsubset=indsubset, nThreads=nThreads, para=para, EMpara=EMpara)
-                       #   private$pfreq <- temp$p
-                       #},
+		                   #' @description
+		                   #' Perform a Hardy–Weinberg Equilibrium (HWE) test for autopolyploids.
+		                   #' 
+		                   #' @details 
+		                   #' The function calls the \code{\link[GUSbase]{p_est_em}} and \code{\link[GUSbase]{g_est_em}} functions in the 
+		                   #' \code{\link[GUSbase]} package to perform the HWE test. 
+		                   #' 
+		                   #' @param snpsubset Vector of SNP indices indicating which SNPs to do the HWE test on.
+		                   #' Excluded SNPs are given a p-value of 0.
+		                   #' @param indsubset Vector of indices of the samples indicating which samples to use in the HWE test.
+		                   #' @param nThreads Integer value specifying the number of threads to use in the parallelization.
+		                   #' @param para Starting values passed to the \code{\link[GUSbase]{p_est_em}} and \code{\link[GUSbase]{g_est_em}} functions.
+		                   #' @param EMpara Convergence criteria passed to the \code{\link[GUSbase]{p_est_em}} and \code{\link[GUSbase]{g_est_em}} functions.
+		                   #' 
                        HWEtest = function(snpsubset=NULL, indsubset=NULL, nThreads=1, para=NULL, EMpara=NULL){
                          if(is.null(indsubset)) indsubset = 1:private$nInd
                          else if(GUSbase::checkVector(indsubset, type = "pos_integer", minv = 0, maxv = private$nInd))
@@ -135,9 +174,19 @@ GRM <- R6::R6Class("GRM",
                                                    indsubset=indsubset, nThreads=nThreads, para=para, EMpara=EMpara)
                          gest <- GUSbase::g_est_em(private$ref, private$alt, ploidy, snpsubset=snpsubset,
                                                    indsubset=indsubset, nThreads=nThreads, para=para, EMpara=EMpara)
-                         private$pvalue <- 1-pchisq(-2*(pest$loglik - gest$loglik), df=ploidy-1)
+                         ## if only performed on a subset, then resize the vector to the number of SNPs
+                         if(is.null(snpsubset)) pvalue = 1-pchisq(-2*(pest$loglik - gest$loglik), df=ploidy-1)
+                         else{
+                           pvalue = rep(0, private$nSnps)
+                           pvalue[snpsubset] = 1-pchisq(-2*(pest$loglik - gest$loglik), df=ploidy-1)
+                         }
+                         private$pvalue <- pvalue
                        },
                        ############# Delete a computed GRM:
+		                   #' @description
+		                   #' Delete a GRM run within the GRM object.
+		                   #' 
+		                   #' @param name Name of the GRM run to delete.
                        removeGRM = function(name){
                          if(!is.vector(name) || !is.character(name))
                            stop("Argument 'name' needs to be a character vector")
@@ -148,15 +197,30 @@ GRM <- R6::R6Class("GRM",
                            private$GRM = NULL
                        },
                        ############# Plot relatedness estimates
-                       plotGRM = function(type=c("histrogram","scatter"),values=c("both","self-relatedness","relatednes"), xaxis=NULL,
-                                          interactive=FALSE){
-                         stop("yet to be implemeted")
-                       },
+                       #plotGRM = function(type=c("histrogram","scatter"),values=c("both","self-relatedness","relatednes"), xaxis=NULL,
+                       #                    interactive=FALSE){
+                       #   stop("yet to be implemeted")
+                       #},
                        ############ Compare different GRMs:
-                       CompareGRM = function(){
-                         stop("yet to be implemeted")
-                       },
+                       #CompareGRM = function(){
+                       #   stop("yet to be implemeted")
+                       #},
                        ############# Plots for the GRM
+		                   #' @description
+		                   #' Produce a PCA plot of a constructed GRM
+		                   #' 
+		                   #' @details 
+		                   #' The sample information used by this function is the information added by the `$addSampleInfo` method.
+		                   #' 
+		                   #' @param name Character value giving the name of the GRM run to extract the constructed GRM from.
+		                   #' @param npc Integer number specifying the number of PCs to plot
+		                   #' @param colour Character string specifying which column of the sample information to use to colour the points
+		                   #' @param shape Character string specifying which column of the sample information to use to group the points based on point shape
+		                   #' @param group.hover Character vector specifying which column(s) of the sample information to include in the hover information for the
+		                   #' interactive plots. Only used if \code{interactive=TRUE}.
+		                   #' @param interactive Logical value: If \code{TRUE}, then an interactive plot using the \code{plotly} package is produced.
+		                   #' Otherwise, a standard \code{ggplot} is constructed.
+		                   #' 
                        PCA = function(name, npc=3, colour=NULL, shape=NULL, group.hover=NULL, interactive=FALSE){
                          if(!is.vector(name) || !is.character(name) || length(name) != 1)
                            stop("Argument 'name' needs to be a character vector of length 1.")
@@ -202,6 +266,18 @@ GRM <- R6::R6Class("GRM",
                          }
                        },
                        #### add group information
+		                   #' @description
+		                   #' Add sample information to the GRM object
+		                   #' 
+		                   #' @details 
+		                   #' The sample information must contain a column 'ID' that has the ID of the samples and must match
+		                   #' the IDs of the samples already in the GRM object. Any extra columns will be added to the existing 
+		                   #' sample information data.
+		                   #' 
+		                   #' Note that a column named 'Ploidy' can not be present in the file. If there are any columns already present
+		                   #' then the function throw and error. 
+		                   #' 
+		                   #' @param samfile Path to the file that contains the sample information to be loaded to GRM object.
                        addSampleInfo = function(samfile){
                          if(!is.vector(samfile) || !is.character(samfile) || length(samfile) != 1)
                            stop("Argument `samfile` is invalid. Must be a character of length 1.")
@@ -236,6 +312,14 @@ GRM <- R6::R6Class("GRM",
                          return(invisible(NULL))
                        },
                        ############# Delete group information
+		                   #' @description
+		                   #' Remove sample information from a GRM object
+		                   #' 
+		                   #' @details 
+		                   #' Note that columns 'ID' and 'Ploidy' cannot be deleted.
+		                   #' 
+		                   #' @param name Character vector of column names to remove from the sample information data.
+		                   #' 
                        removeSampleInfo = function(name){
                          if(!is.vector(name) || !is.character(name))
                            stop("Argument 'name' needs to be a character vector")
@@ -246,6 +330,12 @@ GRM <- R6::R6Class("GRM",
                          private$samInfo = subset(private$samInfo, select = setdiff(colnames(private$samInfo), name))
                        },
                        ########### Extract GRM to file
+		                   #' @description
+		                   #' Extract a GRM from a run.
+		                   #' 
+		                   #' @param name Character value specifying which run to extract the GRM from.
+		                   #' @param IDvar Character value specifying which column of the sample information to use for 
+		                   #' IDs in the GRM matrix. If \code{IDvar=NULL}, then the 'ID' column is used.
                        extractGRM = function(name, IDvar=NULL){
                          if(!is.vector(name) || !is.character(name) || length(name) != 1)
                            stop("Argument 'name' needs to be a character vector of length 1.")
@@ -263,6 +353,16 @@ GRM <- R6::R6Class("GRM",
                          return(GRM)
                        },
                        ########### Write GRM to file
+		                   #' @description
+		                   #' Write GRM to file.
+		                   #' 
+		                   #' @details
+		                   #' The file format is currently a symmetric matrix with the IDs on the rows and columns.
+		                   #' 
+		                   #' @param name Character value specifying which run to write the GRM from.
+		                   #' @param filename Character value giving the name of the output file.
+		                   #' @param IDvar Character value specifying which column of the sample information to use for 
+		                   #' IDs in the GRM matrix. If \code{IDvar=NULL}, then the 'ID' column is used.
                        writeGRM = function(name, filename, IDvar=NULL){
                          if(!is.vector(name) || !is.character(name) || length(name) != 1)
                            stop("Argument 'name' needs to be a character vector of length 1.")

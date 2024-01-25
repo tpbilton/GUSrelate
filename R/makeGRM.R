@@ -1,6 +1,6 @@
 ##########################################################################
 # Genotyping Uncertainty with Sequencing data and RELATEdness (GUSrelate)
-# Copyright 2019-2021 Timothy P. Bilton
+# Copyright 2019-2024 Timothy P. Bilton
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,19 +16,21 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #########################################################################
 
-#' Make an GRM object
+#' @title Make a GRM object
 #' 
+#' @description
 #' Create a genomic relationship matix (GRM) object from an RA object, perform standard filtering and 
 #' compute statistics required for constructing GRMs.
 #' 
+#' @details
 #' This function converts an RA object into a GRM object. A GRM object is
 #' a R6 type object that contains RA data, various statistics related 
-#' to GRM analyses and functions (methods) for analysing GRMs.
+#' to GRM analyses and functions (methods) for analyzing GRMs.
 #' 
 #' The sample information as specified in the \code{samfile} argument should be a csv file with the first column
 #' giving the ID of the sample (and must match the IDs in the RA object supplied in the \code{RAobj} argument) and
-#' the second column giving the ploidy level of each individual. Additional columns can then be added to the that
-#' gives more information about the sample (e.g., cultivar, location, population). For example,
+#' the second column giving the ploidy level of each individual. Additional columns can then be added that
+#' give more information about the sample (e.g., cultivar, location, population). For example,
 #' \tabular{lll}{
 #' ID \tab Ploidy \tab Group \cr
 #' HE109 \tab 2 \tab Wild \cr
@@ -38,8 +40,8 @@
 #' In this example, there are three individuals, the first (HE109) is a diploid and belongs to the Wild group,
 #' the second individual (PE202) is a tetraploid that also belongs to the Wild group and the third individual
 #' (PE243) is also a tetraploid but belongs to the Domesticated group. 
-#' Note that the names for the first two columns must be "ID" and "Ploid" respectively, but any names can
-#' be used for the remaining columns but it is recommended meaning name without spaced. Remeber that the first
+#' Note that the names for the first two columns must be "ID" and "Ploidy" respectively, but any names can
+#' be used for the remaining columns but it is recommended to use meaningful names that don't have spaces. Remember that the first
 #' two are required, any extra columns are optional but can be used later. 
 #' 
 #' The filtering criteria currently implemented are:
@@ -49,7 +51,7 @@
 #'  is greater than the threshold value (default is \code{NULL}).}
 #' \item{Bin size for SNP selection (\code{BIN}): }{SNPs are binned together if the distance (in base pairs) between them is less than the threshold value (default is 100).
 #' One SNP is then randomly selected from each bin and retained for final analysis. This filtering is to ensure that there is only one SNP on each sequence read.}
-#' \item{Maximum averge SNP depth (\code{MAXDEPTH}): }{SNPs with an average read depth above the threshold value are discarded (default is 500).}
+#' \item{Maximum average SNP depth (\code{MAXDEPTH}): }{SNPs with an average read depth above the threshold value are discarded (default is 500).}
 #' }
 #' If a filtering criteria is set to \code{NULL}, then no filtering in regard to
 #' that threshold is applied. 
@@ -62,6 +64,7 @@
 #' 
 #' @author Timothy P. Bilton
 #' @return An R6 object of class GRM.
+#' @seealso \code{\link{GRM}}
 #' @export makeGRM
 
 #### Make an unstructured population
