@@ -123,7 +123,7 @@ Although not described in Bilton et al. (2024), GUSrelate allows input of SNP an
 ```
 ## Generate matrix of error parameters (random)
 ## Note: would not recommend this in practice. Use either information in the VCF 
-## or some otehr software to estimate the error parameter.
+## or some other software to estimate the error parameter.
 nSnps = grm$extractVar("nSnps")$nSnps
 nInd = grm$extractVar("nInd")$nInd
 ep_mat = matrix(plogis(rnorm(n = nSnps*nInd, mean = -10)), nrow=nInd, ncol=nSnps)
