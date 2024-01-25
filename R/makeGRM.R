@@ -43,7 +43,7 @@
 #' two are required, any extra columns are optional but can be used later. 
 #' 
 #' The filtering criteria currently implemented are:
-#' \iterize{
+#' \itemize{
 #' \item{Minor allele frequency (\code{MAF}): }{SNPs are discarded if their MAF is less than the threshold (default is \code{NULL})}
 #' \item{Proportion of missing data (\code{MISS}): }{SNPs are discarded if the proportion of individuals with no reads (e.g. missing genotype)
 #'  is greater than the threshold value (default is \code{NULL}).}

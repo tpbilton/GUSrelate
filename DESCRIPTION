@@ -5,7 +5,7 @@ Date: 2024-01-24
 Authors@R: person("Timothy P.", "Bilton", email = "tbilton@maths.otago.ac.nz", role = c("aut", "cre"))
 Maintainer: Timothy P. Bilton <tbilton@maths.otago.ac.nz>
 Description: Package for constructing genomic relationship matrices (GRMs) for autopolyploid species using high-throughput sequencing data.
-Depends: R (>= 3.3.0), GUSbase (>= 0.2.2), plotly
+Depends: R (>= 3.5.0), GUSbase (>= 0.2.2), plotly
 Imports: R6, Rdpack, ggplot2
 RdMacros: Rdpack
 License: GPL-3 | file LICENSE
