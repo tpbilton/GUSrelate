@@ -57,8 +57,6 @@
 #' @param RAobj Object of class RA created via the \code{\link[GUSbase]{readRA}} function.
 #' @param samfile Character string giving the name of the file that contains the sample information of the population. 
 #' See below for details.
-#' @param method A character string specifying whether the VanRaden (\code{'VanRaden'}) based estimator or 
-#' the Weir-Goudet (\code{'WG'}) estimator is used to construct the GRM.
 #' @param filter Named list of thresholds for various filtering criteria.
 #' See below for details.
 #' 

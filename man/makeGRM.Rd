@@ -18,9 +18,6 @@ See below for details.}
 
 \item{filter}{Named list of thresholds for various filtering criteria.
 See below for details.}
-
-\item{method}{A character string specifying whether the VanRaden (\code{'VanRaden'}) based estimator or 
-the Weir-Goudet (\code{'WG'}) estimator is used to construct the GRM.}
 }
 \value{
 An R6 object of class GRM.
@@ -52,7 +49,7 @@ be used for the remaining columns but it is recommended meaning name without spa
 two are required, any extra columns are optional but can be used later. 
 
 The filtering criteria currently implemented are:
-\iterize{
+\itemize{
 \item{Minor allele frequency (\code{MAF}): }{SNPs are discarded if their MAF is less than the threshold (default is \code{NULL})}
 \item{Proportion of missing data (\code{MISS}): }{SNPs are discarded if the proportion of individuals with no reads (e.g. missing genotype)
  is greater than the threshold value (default is \code{NULL}).}

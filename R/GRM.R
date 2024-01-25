@@ -190,9 +190,9 @@ GRM <- R6::R6Class("GRM",
                            p = ggplot2::ggplot(df, ggplot2::aes(x=x,y=y, col=g1, shape=g2)) + ggplot2::geom_point() + ggplot2::theme_bw() +
                              ggplot2::ylab(lab2) + ggplot2::xlab(lab1)
                            if(!is.null(colour))
-                             p = p + guides(color=guide_legend(title=colour))
+                             p = p + ggplot2::guides(color=ggplot2::guide_legend(title=colour))
                            if(!is.null(shape))
-                             p = p + guides(shape=guide_legend(title=shape))
+                             p = p + ggplot2::guides(shape=ggplot2::guide_legend(title=shape))
                            p
                          }
                        },

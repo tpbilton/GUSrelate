@@ -33,6 +33,7 @@
 #' @keywords package
 #' @importFrom Rdpack reprompt
 #' @importFrom R6 R6Class
+#' @import GUSbase
 "_PACKAGE"
 
 

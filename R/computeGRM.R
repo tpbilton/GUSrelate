@@ -1,6 +1,6 @@
 ##########################################################################
-# Genotyping Uncertainty with Sequencing data for RELATEdness (GUSrelate)
-# Copyright 2019-2021 Timothy P. Bilton
+# Genotyping Uncertainty with Sequencing data and linkage MAPping (GUSMap)
+# Copyright 2017-2024 Timothy P. Bilton
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -11,29 +11,11 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-#
+# 
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #########################################################################
-#' GRM method: Construct a genomic relationship matrix (GRM)
-#'
-#' Method for constructing a genomic relationship matrix (GRM) for a diploid or autopolyploid population.
-#'
-#' @param name A character string giving the name of the GRM analysis
-#' @param method A character string specifying whether the VanRaden (\code{'VanRaden'}) based estimator or
-#' the Weir-Goudet (\code{'WG'}) estimator is used to construct the GRM.
-#' @param ploid A positive integer vector specifying the ploidy level of each individual. If only a single value is given,
-#' then the ploidy level is assumed equal in all the individuals.
-#' @param ep Sequencing error value. Can be a single number (sequencing error rate same for all genotypes),
-#' a vector equal to the number of SNPs (SNP specific sequencing error rate) or a matrix the same diminsion as the data (SNP and
-#' individual specific sequencing error rate).
-#' @param snpsubset Vector of indices of SNPs that should be retained in the analysis. Useful for subsetting the SNPs before
-#' any filtering is applied.
-#' @param phat Vector of allele frequencies to use in the constuction of the GRM.
-#'
-#' @seealso \code{\link{GRM}}
-#' @author Timothy P. Bilton
-#' @export computeGRM
+
 
 computeGRM <- function(ref, alt, ploid, snpsubset=NULL, method="VanRaden", phat, ep=0, ...){
 

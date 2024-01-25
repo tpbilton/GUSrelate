@@ -3,6 +3,7 @@
 \docType{package}
 \name{GUSbase-package}
 \alias{GUSbase-package}
+\alias{_PACKAGE}
 \alias{GUSrelate}
 \title{Genotyping Uncertainty with Sequencing data and RELATEdness (GUSrelate)}
 \description{
@@ -11,7 +12,7 @@ via reference and alternate count information from sequence data.
 }
 \details{
 \tabular{ll}{ Package: \tab GUSrelate\cr Type: \tab Package\cr Version: \tab
-0.2.1\cr Date: \tab 2023-05-25\cr License: \tab GPL-3\cr }
+0.2.2\cr Date: \tab 2024-01-24\cr License: \tab GPL-3\cr }
 }
 \references{
 \insertAllCited{}
