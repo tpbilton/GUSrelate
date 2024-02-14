@@ -377,7 +377,7 @@ GRM <- R6::R6Class("GRM",
                          } else colnames(GRM) <- rownames(GRM) <- private$indID
 
                          ## write GRM to file
-                         data.table::fwrite(GRM, file = filename, row.names=TRUE)
+                         data.table::fwrite(as.data.frame(GRM), file = filename, row.names=TRUE)
                        }
                      ),
                      private = list(
