@@ -141,7 +141,7 @@ This package is still under development and additional methods and functions for
 
 To cite this R package:
 
-Bilton, T.P., Sharma, S.K., Schofield, M.R., Black, M.A., Jacobs, J.M.E., Bryan, G.J. \& Dodds, K.G. (2024). Construction of relatedness matrices in autopolyploid populations using low depth high-throughput sequencing data. Unpublished Manuscript
+Bilton, T.P., Sharma, S.K., Schofield, M.R., Black, M.A., Jacobs, J.M.E., Bryan, G.J. \& Dodds, K.G. (2024). Construction of relatedness matrices in autopolyploid populations using low depth high-throughput sequencing data. *Theoretical and Applied Genetics*. 137:64. doi: [10.1007/s00122-024-04568-2](https://dx.doi.org/10.1007/s00122-024-04568-2)
 
 ### Funding:
 The initial development of this package was partially funded by the Ministry of Business, Innovation and Employment via its funding of the “Genomics for Production & Security in a Biological Economy” programme (Contract ID C10X1306).
