@@ -16,9 +16,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #########################################################################
 
-computeGRM <- function(ref, alt, ploid, snpsubset=NULL, method="VanRaden", phat, ep=0, ...){
+computeGRM <- function(ref, alt, ploid, snpsubset=NULL, method="VanRaden", phat, ep=0, thres=0.001, ...){
 
-  if(!exists("thres")) thres = 0.001
+#  if(!exists("thres")) thres = 0.001
 
   ## do some checks
   match.arg(method, choices = c("VanRaden","WG"))
@@ -58,15 +58,21 @@ computeGRM <- function(ref, alt, ploid, snpsubset=NULL, method="VanRaden", phat,
     }
   }
 
-  if(method=="VanRaden" && (is.null(phat) || length(phat) != nSnps))
-    stop("Allele frequency vector is not supplied or not equal to the number of SNPs")
+  if(method=="VanRaden" && (is.null(phat) || (is.vector(phat) & length(phat) != nSnps) || (is.matrix(phat) & !all(dim(phat) == c(nInd, nSnps)))))
+    stop(paste0("Allele frequency information supplied is not a vector with ", nSnps, " SNPs or a matrix with ", nInd, " rows and ",nSnps, " SNPs"))
   ## subset the data if required
   if(!is.null(snpsubset)){
     ep <- ep[,snpsubset]
     ## compute depth and dosage matrix
     depth <- depth[,snpsubset]
     ratio <- ratio[,snpsubset]
-    if(method=="VanRaden") phat <- phat[snpsubset]
+    if(method=="VanRaden") {
+      if(is.vector(phat)) {
+        phat = phat[snpsubset]
+      } else {
+        phat = phat[,snpsubset]
+      }
+    }
   }
 
   #################
@@ -74,16 +80,25 @@ computeGRM <- function(ref, alt, ploid, snpsubset=NULL, method="VanRaden", phat,
   #################
 
   if(method == "VanRaden"){
-    snpsubset <- which(phat < 1-thres & phat > thres)
-    depth = depth[,snpsubset]
-    nsnpsub <- length(snpsubset)
-    phat <- phat[snpsubset]
-    ep = ep[,snpsubset]
+    if(is.vector(phat)){
+      snpsubset <- which(phat < 1-thres & phat > thres)
+      depth = depth[,snpsubset]
+      nsnpsub <- length(snpsubset)
+      phat <- phat[snpsubset]
+      ep = ep[,snpsubset]
+      phat = matrix(phat, nrow = nInd, ncol = nsnpsub, byrow = T) # rep.int(phat, rep(nInd, nsnpsub))
+    } else {
+      phat_tmp = phat
+      snpsubset = 1:ncol(depth)
+      depth[which((phat_tmp < thres) | (phat_tmp > 1-thres))] = 0
+      ratio[which((phat_tmp < thres) | (phat_tmp > 1-thres))] = NA
+      phat[which((phat_tmp < thres) | (phat_tmp > 1-thres))] = 0
+    }
 
     ## Compute the adjusted GRM
-    genon0 <- ratio[,snpsubset] - rep.int(phat, rep(nInd, nsnpsub))
+    genon0 <- ratio[,snpsubset] - phat
     genon0[depth<1] = 0
-    P0 <- matrix(phat,nrow=nInd,ncol=nsnpsub,byrow=T)
+    P0 <- phat 
     P1 <- 1-P0
     P0[depth<1] = 0
     P1[depth<1] = 0
