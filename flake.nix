@@ -27,7 +27,7 @@
               name = "GUSrelate";
               src = ./.;
               propagatedBuildInputs = with rPackages;
-                [ data_table, R6, Rdpack, ggplot2, plotly, flakePkgs.GUSbase ];
+                [ data_table R6 Rdpack ggplot2 plotly flakePkgs.GUSbase ];
             };
 
           R-with-GUSrelate = with pkgs;
