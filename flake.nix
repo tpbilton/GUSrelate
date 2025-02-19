@@ -3,14 +3,14 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     flake-utils.url = "github:numtide/flake-utils";
-    GUSrelate = {
-      url = github:tpbilton/GUSrelate;
+    GUSbase = {
+      url = github:tpbilton/GUSbase;
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.flake-utils.follows = "flake-utils";
     };
   };
 
-  outputs = { self, nixpkgs, flake-utils, GUSrelate }:
+  outputs = { self, nixpkgs, flake-utils, GUSbase }:
     flake-utils.lib.eachDefaultSystem
       (system:
         let
