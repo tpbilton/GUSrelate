@@ -1,6 +1,6 @@
 Package: GUSrelate
 Title: Genotyping Uncertainty with Sequencing data and RELATEdness 
-Version: 0.2.2
+Version: 0.2.3
 Date: 2024-01-24
 Authors@R: person("Timothy P.", "Bilton", email = "tbilton@maths.otago.ac.nz", role = c("aut", "cre"))
 Maintainer: Timothy P. Bilton <tbilton@maths.otago.ac.nz>
