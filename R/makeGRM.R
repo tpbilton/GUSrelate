@@ -85,7 +85,7 @@ makeGRM <- function(RAobj, samfile, filter=list(MAF=NULL, MISS=NULL, BIN=100, MA
   if(is.null(filter$MISS)) filter$MISS <- 1
   else if( length(filter$MISS) != 1 || !is.numeric(filter$MISS) || filter$MISS<0 || filter$MISS>1 )
     stop("Proportion of missing data filter is invalid")
-  if(is.null(filter$MAXDETH)) filter$MAXDEPTH <- 500
+  if(is.null(filter$MAXDEPTH)) filter$MAXDEPTH <- 500
   else if( length(filter$MAXDEPTH) != 1 || GUSbase::checkVector(filter$MAXDEPTH, type="pos_integer"))
     stop("Maximum SNP depth filter is invalid.")
   if(is.null(filter$BIN)) filter$BIN <- 0
@@ -192,5 +192,6 @@ makeGRM <- function(RAobj, samfile, filter=list(MAF=NULL, MISS=NULL, BIN=100, MA
   ## return the GRM object
   return(GRMobj)
 }
+
 
 

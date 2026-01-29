@@ -22,7 +22,7 @@
 #' via reference and alternate count information from sequence data.
 #'
 #' \tabular{ll}{ Package: \tab GUSrelate\cr Type: \tab Package\cr Version: \tab
-#' 0.2.2\cr Date: \tab 2024-01-24\cr License: \tab GPL-3\cr }
+#' 0.2.3\cr Date: \tab 2025-02-20\cr License: \tab GPL-3\cr }
 #'
 #' @name GUSrelate-package
 #' @aliases GUSrelate
